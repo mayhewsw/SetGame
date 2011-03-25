@@ -8,7 +8,7 @@ import math
 # Options are number, fill, color, shape
 # The check is simply:
 #     if "number" in debug: ...
-debug = "shape"
+debug = ""
 
 class Card:
     """ A useful way to store both bounding box and attributes """

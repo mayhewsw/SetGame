@@ -3,7 +3,6 @@
 import cv
 import processCards
 import sys
-import subprocess
 
 # create capture device
 device = 0 # assume we want first device
