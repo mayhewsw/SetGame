@@ -139,7 +139,7 @@ def getMeaningFromCards(groups, image):
         shape = getShape(gray, symbol)
         
         # Print out and store
-        os.system("espeak "+str(number)+" "+fill+" "+color+" "+shape)
+        #os.system("espeak \""+str(number)+" "+fill+" "+color+" "+shape+"\"")
         print number, fill, color, shape
         print
 
@@ -600,7 +600,6 @@ def groupBoxes(boxes, image):
     topmiddleRow = filter(lambda b: rowHeight-offset < b[1] < rowHeight*2-offset, boxes)
     bottommiddleRow = filter(lambda b: rowHeight*2-offset < b[1] < rowHeight*3-offset, boxes)
     bottomRow = filter(lambda b: rowHeight*3-offset < b[1], boxes)
-    
     rows = [topRow, topmiddleRow, bottommiddleRow, bottomRow]
 
     final = []
@@ -651,7 +650,9 @@ def groupBoxes(boxes, image):
     # Give a warning for normal gameplay
     # (should be 12 cards)
     if len(groupsOfCards) != 12:
-        print "Warning: groupboxes has detected " + str(len(groupsOfCards)) + " cards."
+        s = "Warning: groupboxes has detected " + str(len(groupsOfCards)) + " cards."
+        os.system("espeak \"" + s + "\"") 
+        print s
 
     return groupsOfCards
         
@@ -666,18 +667,20 @@ def isSet(card1, card2, card3):
 
 def SolveGame(cards):
     c = len(cards)
-    found = False
-
+    count = 0
+    
     print c
     for i in range(c-2):
         for j in range(i+1, c-1):
             for k in range(j+1, c):
                 if isSet(cards[i], cards[j], cards[k]):
                     print "FOUND A SET:\n   ", str(cards[i]),"\n   ", str(cards[j]),"\n   ", str(cards[k])
+                    count += 1
                     print
-                    found = True
 
-    if found:
+
+    if count  > 0:
+        os.system("espeak \"I found " + str(count) + " sets. Press enter to continue.\"")
         cv.WaitKey(0)
                 
                 
