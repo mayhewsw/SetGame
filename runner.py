@@ -13,7 +13,7 @@ capture = cv.CreateCameraCapture(device)
 cv.SetCaptureProperty(capture, cv.CV_CAP_PROP_GAIN , .1) # I have no idea about this value
 #var = float(raw_input("Set brightness: "))
 # Set brightness
-cv.SetCaptureProperty(capture, cv.CV_CAP_PROP_BRIGHTNESS , .2) # I have no idea about this value
+cv.SetCaptureProperty(capture, cv.CV_CAP_PROP_BRIGHTNESS , 0) # I have no idea about this value
 
 # Set framerate
 cv.SetCaptureProperty(capture, cv.CV_CAP_PROP_FPS, 4) # I have no idea about this value
@@ -46,8 +46,8 @@ while 1:
         break
 
     # Run the recognizer
-    groups = processCards.extractCards(frame)
-    processCards.getMeaningFromCards(groups, frame)
+    #groups = processCards.extractCards(frame)
+    #processCards.getMeaningFromCards(groups, frame)
 
     cv.ShowImage("webcam", frame)
     cv.WaitKey(100) # wait for a small amount of time
