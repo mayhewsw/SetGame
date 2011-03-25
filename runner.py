@@ -8,18 +8,19 @@ import sys
 device = 0 # assume we want first device
 capture = cv.CreateCameraCapture(device)
 
-#var = float(raw_input("Set gain: "))
-# Set gain
-cv.SetCaptureProperty(capture, cv.CV_CAP_PROP_GAIN , .1) # I have no idea about this value
-#var = float(raw_input("Set brightness: "))
-# Set brightness
-cv.SetCaptureProperty(capture, cv.CV_CAP_PROP_BRIGHTNESS , 0) # I have no idea about this value
+
+cv.SetCaptureProperty(capture, cv.CV_CAP_PROP_BRIGHTNESS , .11) 
+cv.SetCaptureProperty(capture, cv.CV_CAP_PROP_HUE , .81) 
+cv.SetCaptureProperty(capture, cv.CV_CAP_PROP_CONTRAST, .21)
+cv.SetCaptureProperty(capture, cv.CV_CAP_PROP_POS_FRAMES, 0)
 
 # Set framerate
-cv.SetCaptureProperty(capture, cv.CV_CAP_PROP_FPS, 4) # I have no idea about this value
+#cv.SetCaptureProperty(capture, cv.CV_CAP_PROP_FPS, 4) # I have no idea about this value
 
 # Set exposure
-cv.SetCaptureProperty(capture, cv.CV_CAP_PROP_EXPOSURE, 40) # I have no idea about this value
+#cv.SetCaptureProperty(capture, cv.CV_CAP_PROP_EXPOSURE, 40) # I have no idea about this value
+
+
 
 # Set height and width of camera image
 cv.SetCaptureProperty(capture, cv.CV_CAP_PROP_FRAME_WIDTH, 640)
@@ -30,13 +31,13 @@ if not capture:
     print "Error opening capture device"
     sys.exit(1)
 
-print capture
 
 cv.NamedWindow("webcam", cv.CV_WINDOW_AUTOSIZE)
 
+runAndProcess = True
+
 # Infinite Loop
 while 1:
-
 
     # capture the current frame
     frame = cv.QueryFrame(capture)
@@ -46,8 +47,9 @@ while 1:
         break
 
     # Run the recognizer
-    groups = processCards.extractCards(frame)
-    processCards.getMeaningFromCards(groups, frame)
+    if runAndProcess:
+        groups = processCards.extractCards(frame)
+        processCards.getMeaningFromCards(groups, frame)
 
     cv.ShowImage("webcam", frame)
     cv.WaitKey(100) # wait for a small amount of time
