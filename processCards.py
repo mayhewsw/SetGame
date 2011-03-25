@@ -645,18 +645,24 @@ def groupBoxes(boxes, image):
 
     return groupsOfCards
         
-def SolveGame(cards):
-    """ This will accept a set of 3 cards """
-    card1 = cards[0]
-    card2 = cards[1]
-    card3 = cards[2]
+def isSet(card1, card2, card3):
+    """ This will accept 3 cards and decide if it is a set"""
 
     return (((card1.color == card2.color and card2.color == card3.color) or (card1.color != card2.color and card1.color != card3.color and card2.color != card3.color)) and
-	    ((card1.symbol == card2.symbol and card2.symbol == card3.symbol) or (card1.symbol != card2.symbol and card1.symbol != card3.symbol and card2.symbol != card3.symbol)) and
+	    ((card1.shape == card2.shape and card2.shape == card3.shape) or (card1.shape != card2.shape and card1.shape != card3.shape and card2.shape != card3.shape)) and
 	    ((card1.number == card2.number and card2.number == card3.number) or (card1.number != card2.number and card1.number != card3.number and card2.number != card3.number)) and
-	    ((card1.shading == card2.shading and card2.shading == card3.shading) or (card1.shading != card2.shading and card1.shading != card3.shading and card2.shading != card3.shading)))
+	    ((card1.fill == card2.fill and card2.fill == card3.fill) or (card1.fill != card2.fill and card1.fill != card3.fill and card2.fill != card3.fill)))
 
-
+def SolveGame(cards):
+    c = len(cards)
+    for i in range(c):
+        for j in range(i, c):
+            for k in (j, c):
+                if isSet(cards[i], cards[j], cards[k]):
+                    print "FOUND A SET:", cards[i], cards[j], cards[k]
+                
+                
+                
 
 
 def drawBoundingBoxes(bb, img):
