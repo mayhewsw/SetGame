@@ -8,11 +8,16 @@ import sys
 device = 0 # assume we want first device
 capture = cv.CreateCameraCapture(device)
 
+f = open("cameraConfig.cfg")
+hue = f.readline().split()[1]
+brightness = f.readline().split()[1]
+contrast = f.readline().split()[1]
+f.close()
 
 #cv.SetCaptureProperty(capture, cv.CV_CAP_PROP_BRIGHTNESS , .) 
-cv.SetCaptureProperty(capture, cv.CV_CAP_PROP_HUE , .68) 
-cv.SetCaptureProperty(capture, cv.CV_CAP_PROP_CONTRAST, .20)
-cv.SetCaptureProperty(capture, cv.CV_CAP_PROP_POS_FRAMES, 0)
+cv.SetCaptureProperty(capture, cv.CV_CAP_PROP_HUE , float(hue)) 
+cv.SetCaptureProperty(capture, cv.CV_CAP_PROP_CONTRAST, float(contrast))
+cv.SetCaptureProperty(capture, cv.CV_CAP_PROP_POS_FRAMES, float(brightness))
 
 # Set framerate
 #cv.SetCaptureProperty(capture, cv.CV_CAP_PROP_FPS, 4) # I have no idea about this value
@@ -49,7 +54,7 @@ while 1:
     # Run the recognizer
     if runAndProcess:
         groups = processCards.extractCards(frame)
-        card = processCards.getMeaningFromCards(groups, frame)
+        cards = processCards.getMeaningFromCards(groups, frame)
         
     else:
         cv.ShowImage("webcam", frame)

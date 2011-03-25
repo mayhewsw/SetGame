@@ -1,4 +1,5 @@
 import cv 
+import os
 
 # create capture device
 device = 0 # assume we want first device
@@ -75,41 +76,49 @@ if __name__ == '__main__':
     original = cv.LoadImage('/media/sda1/BeagleSetGame/images/lamp1.jpg')
     cv.ShowImage('originalimage', original)
 
-    #print "Frame count", cv.GetCaptureProperty(capture, cv.CV_CAP_PROP_FRAME_COUNT)
-    #print "Brightness",cv.GetCaptureProperty(capture, cv.CV_CAP_PROP_BRIGHTNESS) 
-    #print "Contrast",cv.GetCaptureProperty(capture, cv.CV_CAP_PROP_CONTRAST) 
-    #print "Sat",cv.GetCaptureProperty(capture, cv.CV_CAP_PROP_SATURATION) 
-    #print "Hue",cv.GetCaptureProperty(capture, cv.CV_CAP_PROP_HUE) 
-    #print "FPS",cv.GetCaptureProperty(capture, cv.CV_CAP_PROP_FPS)  
+    hue = 0
+    brightness = 0
+    contrast = 0
+
+    cfg = "cameraConfig.cfg"
+    if os.path.exists(cfg):
+        f = open(cfg, 'r')
+        hue = float(f.readline().split()[1])
+        brightness = float(f.readline().split()[1])
+        contrast = float(f.readline().split()[1])
+        f.close()
     
-    # Set height and width of camera image
+    # Set capture properties
     cv.SetCaptureProperty(capture, cv.CV_CAP_PROP_FRAME_WIDTH, 640)
     cv.SetCaptureProperty(capture, cv.CV_CAP_PROP_FRAME_HEIGHT, 480)    
-
     cv.SetCaptureProperty(capture, cv.CV_CAP_PROP_POS_FRAMES, 0)
+    cv.SetCaptureProperty(capture, cv.CV_CAP_PROP_BRIGHTNESS, brightness)
+    cv.SetCaptureProperty(capture, cv.CV_CAP_PROP_HUE, hue)
+    cv.SetCaptureProperty(capture, cv.CV_CAP_PROP_CONTRAST, contrast)
     
-    # check if capture device is OK
-    #if not capture:
-    #    print "Error opening capture device"
-    #    sys.exit(1)
     wnd = "Trackbartest"
     cv.NamedWindow(wnd, 1)
 
     cv.CreateTrackbar("Brightness", wnd, 0, 100, on_trackbar)
-    #cv.CreateTrackbar("Gain", wnd, 0, 100, on_trackbargain)
-    cv.CreateTrackbar("Contrast", wnd, 0, 100, on_trackbarcontrast)
-    cv.CreateTrackbar("Saturation", wnd, 0, 100, on_trackbarsaturation)
+    cv.CreateTrackbar("Contrast", wnd, 0, 100, on_trackbarcontrast)    
     cv.CreateTrackbar("Hue", wnd, 0, 100, on_trackbarhue)
+    
+    #cv.CreateTrackbar("Gain", wnd, 0, 100, on_trackbargain)
+    #cv.CreateTrackbar("Saturation", wnd, 0, 100, on_trackbarsaturation)
     #cv.CreateTrackbar("Exp", wnd, 0, 100, on_trackbarexp)
 
-    cv.SetTrackbarPos("Hue", wnd, 50)
+    cv.SetTrackbarPos("Hue", wnd, int(hue*100))
+    cv.SetTrackbarPos("Brightness", wnd, int(brightness*100))
+    cv.SetTrackbarPos("Contrast", wnd, int(contrast*100))
 
     on_trackbar(0)
     #on_trackbargain(0)
     on_trackbarcontrast(0)
-    on_trackbarsaturation(0)
+    #on_trackbarsaturation(0)
     on_trackbarhue(0)
     #on_trackbarexp(0)
+
+    f = open("cameraConfig.cfg", "w")
 
     orig = cv.QueryFrame(capture)    
        
@@ -124,5 +133,21 @@ if __name__ == '__main__':
         #dosaturate = False
 
         cv.ShowImage(wnd,frame)
-        cv.WaitKey(100)
+        c = cv.WaitKey(100)
+        #print c
+        enter = 1048586
+        esc = 1048603
+        if c == enter:
+            hue =  cv.GetCaptureProperty(capture, cv.CV_CAP_PROP_HUE)
+            brightness = cv.GetCaptureProperty(capture, cv.CV_CAP_PROP_BRIGHTNESS)
+            contrast = cv.GetCaptureProperty(capture, cv.CV_CAP_PROP_CONTRAST)            
+            f.write("HUE " + str(hue) + "\n")
+            f.write("BRIGHTNESS " + str(brightness) + "\n")
+            f.write("CONTRAST " + str(contrast) + "\n")
+            print "Data saved to", cfg
+        elif c == esc:
+            print "Leaving now..."
+            f.close()
+            break
+        
     

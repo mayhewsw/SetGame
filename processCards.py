@@ -61,9 +61,9 @@ def makeBoardImage(cards, newImage):
     """ Draw results on image using stock symbols """
     
     for card in cards:
-        fill = card.attributes[1] if card.attributes[1] != "empty" else ""
-        color = card.attributes[2]
-        shape = card.attributes[3]
+        fill = card.fill if card.fill != "empty" else ""
+        color = card.color
+        shape = card.shape
         
         if shape[-1] == "s":
             shape = shape[0:-1]
@@ -654,8 +654,8 @@ def SolveGame(cards):
     return (((card1.color == card2.color and card2.color == card3.color) or (card1.color != card2.color and card1.color != card3.color and card2.color != card3.color)) and
 	    ((card1.symbol == card2.symbol and card2.symbol == card3.symbol) or (card1.symbol != card2.symbol and card1.symbol != card3.symbol and card2.symbol != card3.symbol)) and
 	    ((card1.number == card2.number and card2.number == card3.number) or (card1.number != card2.number and card1.number != card3.number and card2.number != card3.number)) and
-	    ((card1.shading == card2.shading and card2.shading == card3.shading) or (card1.shading != card2.shading and card1.shading != card3.shading and card2.shading != card3.shading)));
-}
+	    ((card1.shading == card2.shading and card2.shading == card3.shading) or (card1.shading != card2.shading and card1.shading != card3.shading and card2.shading != card3.shading)))
+
 
 
 
@@ -700,6 +700,8 @@ def findDistinctBoxes(boundingboxes):
 
 
 if __name__ == '__main__':
+    global debug
+
     #cards = {}
     #for i in range(0):
     #    n = random.randint(0, 80)
@@ -707,6 +709,8 @@ if __name__ == '__main__':
     #    image = cv.LoadImage(name)
     #    cards[(0,i)] = image
 
+    # Setting this to have len > 0 causes the image to be shown later
+    debug = "1"
     image = cv.LoadImage("images/lamp1.jpg")
     groups = extractCards(image)
     getMeaningFromCards(groups, image)
