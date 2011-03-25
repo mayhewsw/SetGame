@@ -1,4 +1,4 @@
-3# Process cards for the Set Solver game
+# Process cards for the Set Solver game
 # Stephen Mayhew - April 23, 2011
 
 import cv
@@ -8,7 +8,7 @@ import math
 # Options are number, fill, color, shape
 # The check is simply:
 #     if "number" in debug: ...
-debug = "shape"
+debug = ""
 
 class Card:
     """ A useful way to store both bounding box and attributes """
@@ -150,7 +150,7 @@ def getMeaningFromCards(groups, image):
 
     # Around here, we will actually want to solve the game
     
-    cv.WaitKey(0)
+    cv.WaitKey(100)
 
 
 def fillPreProcess(groups, image):

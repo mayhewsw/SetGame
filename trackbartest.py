@@ -24,6 +24,11 @@ def on_trackbarcontrast(position):
 
     cv.SetCaptureProperty(capture, cv.CV_CAP_PROP_CONTRAST , position/100.0)
 
+def on_trackbarexp(position):
+    global capture
+
+    cv.SetCaptureProperty(capture, cv.CV_CAP_PROP_EXPOSURE , position/1000.0)
+
 def on_trackbarhue(position):
     global capture
 
@@ -74,22 +79,26 @@ if __name__ == '__main__':
     #if not capture:
     #    print "Error opening capture device"
     #    sys.exit(1)
+    wnd = "Trackbartest"
+    cv.NamedWindow(wnd, 1)
 
-    cv.NamedWindow("contours", 1)
+    cv.CreateTrackbar("Brightness", wnd, 0, 100, on_trackbar)
+    #cv.CreateTrackbar("Gain", wnd, 0, 100, on_trackbargain)
+    cv.CreateTrackbar("Contrast", wnd, 0, 100, on_trackbarcontrast)
+    cv.CreateTrackbar("Saturation", wnd, 0, 100, on_trackbarsaturation)
+    cv.CreateTrackbar("Hue", wnd, 0, 100, on_trackbarhue)
+    #cv.CreateTrackbar("Exp", wnd, 0, 100, on_trackbarexp)
 
-    cv.CreateTrackbar("Brightness", "contours", 0, 100, on_trackbar)
-    #cv.CreateTrackbar("Gain", "contours", 0, 100, on_trackbargain)
-    cv.CreateTrackbar("Contrast", "contours", 0, 100, on_trackbarcontrast)
-    cv.CreateTrackbar("Saturation", "contours", 0, 100, on_trackbarsaturation)
-    cv.CreateTrackbar("Hue", "contours", 0, 100, on_trackbarhue)
+    cv.SetTrackbarPos("Hue", wnd, 50)
 
-    orig = cv.QueryFrame(capture)
-
-    on_trackbar(9)
+    on_trackbar(0)
     #on_trackbargain(0)
     on_trackbarcontrast(0)
     on_trackbarsaturation(0)
     on_trackbarhue(0)
+    #on_trackbarexp(0)
+
+    orig = cv.QueryFrame(capture)    
        
     while 1:
         frame = cv.QueryFrame(capture)
@@ -100,6 +109,6 @@ if __name__ == '__main__':
         #print dosaturate
         #dosaturate = False
 
-        cv.ShowImage("contours",frame)
+        cv.ShowImage(wnd,frame)
         cv.WaitKey(100)
     

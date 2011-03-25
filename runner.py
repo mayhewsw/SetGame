@@ -10,7 +10,7 @@ capture = cv.CreateCameraCapture(device)
 
 
 cv.SetCaptureProperty(capture, cv.CV_CAP_PROP_BRIGHTNESS , .11) 
-cv.SetCaptureProperty(capture, cv.CV_CAP_PROP_HUE , .81) 
+cv.SetCaptureProperty(capture, cv.CV_CAP_PROP_HUE , .61) 
 cv.SetCaptureProperty(capture, cv.CV_CAP_PROP_CONTRAST, .21)
 cv.SetCaptureProperty(capture, cv.CV_CAP_PROP_POS_FRAMES, 0)
 
@@ -32,7 +32,7 @@ if not capture:
     sys.exit(1)
 
 
-cv.NamedWindow("webcam", cv.CV_WINDOW_AUTOSIZE)
+#cv.NamedWindow("webcam", cv.CV_WINDOW_AUTOSIZE)
 
 runAndProcess = True
 
@@ -42,6 +42,8 @@ while 1:
     # capture the current frame
     frame = cv.QueryFrame(capture)
 
+    print cv.GetCaptureProperty(capture, cv.CV_CAP_PROP_FRAME_HEIGHT)
+
     if frame is None:
         print "No frame found. Exiting."
         break
@@ -50,6 +52,10 @@ while 1:
     if runAndProcess:
         groups = processCards.extractCards(frame)
         processCards.getMeaningFromCards(groups, frame)
+    else:
+        cv.ShowImage("webcam", frame)
+        cv.WaitKey(100) # wait for a small amount of time
 
-    cv.ShowImage("webcam", frame)
-    cv.WaitKey(100) # wait for a small amount of time
+
+
+
