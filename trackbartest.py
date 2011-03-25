@@ -57,6 +57,19 @@ def saturate(frame, amount):
     cv.CvtColor(saturatedImage, frame, cv.CV_HSV2BGR)
     return frame
 
+def equalizeColors(frame):
+    bchan = cv.CreateImage((frame.width, frame.height), 8, 1)
+    gchan = cv.CreateImage((frame.width, frame.height), 8, 1)
+    rchan = cv.CreateImage((frame.width, frame.height), 8, 1)
+
+    cv.Split(frame, bchan, gchan, rchan, None)
+    cv.EqualizeHist(bchan, bchan)
+    cv.EqualizeHist(gchan, gchan)
+    cv.EqualizeHist(rchan, rchan)
+
+    cv.Merge(bchan, gchan, rchan, None, frame)
+    return frame
+
 if __name__ == '__main__':
     global amount
     original = cv.LoadImage('/media/sda1/BeagleSetGame/images/lamp1.jpg')
@@ -103,8 +116,9 @@ if __name__ == '__main__':
     while 1:
         frame = cv.QueryFrame(capture)
 
+        #frame = equalizeColors(frame)
         #if dosaturate:
-        frame = saturate(orig, amount)
+        #frame = saturate(orig, amount)
 
         #print dosaturate
         #dosaturate = False

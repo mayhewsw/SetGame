@@ -10,7 +10,7 @@ capture = cv.CreateCameraCapture(device)
 
 
 cv.SetCaptureProperty(capture, cv.CV_CAP_PROP_BRIGHTNESS , .11) 
-cv.SetCaptureProperty(capture, cv.CV_CAP_PROP_HUE , .61) 
+cv.SetCaptureProperty(capture, cv.CV_CAP_PROP_HUE , .51) 
 cv.SetCaptureProperty(capture, cv.CV_CAP_PROP_CONTRAST, .21)
 cv.SetCaptureProperty(capture, cv.CV_CAP_PROP_POS_FRAMES, 0)
 
