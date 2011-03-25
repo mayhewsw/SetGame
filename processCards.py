@@ -21,7 +21,8 @@ class Card:
         self.fill = fill
 
     def __str__(self):
-        return "Card: " + str(self.color) + self.symbols + "other stuff"
+        tmpShape = self.shape if self.number == 1 else self.shape + "s" 
+        return "Card: " + str(self.number) + " " + self.color + " " + self.fill + " " + tmpShape
     
 
 def getThresholdsFromList(l):
@@ -137,7 +138,6 @@ def getMeaningFromCards(groups, image):
         shape = getShape(gray, symbol)
         
         # Print out and store
-        if number > 1: shape += "s"
         print number, fill, color, shape
         print
 
@@ -157,7 +157,11 @@ def getMeaningFromCards(groups, image):
     if len(debug) > 0:
         cv.WaitKey(0)
     else:
-        cv.WaitKey(100)
+        c = cv.WaitKey(100)
+        enter = 1048586
+        esc = 1048603
+        if c == enter or c == esc:
+            return "break out of this loop"
 
     return cards
 
@@ -553,7 +557,11 @@ def extractCards(image):
 
     # Get the average.
     # I may want the mode instead.
-    avg = sum(areas)/len(areas)
+    avg = 0
+    if len(areas) > 0:
+        avg = sum(areas)/len(areas)
+    else:
+        print "avg is 0"
     print avg
 
     # remove boxes that are very far from the average
@@ -648,19 +656,27 @@ def groupBoxes(boxes, image):
 def isSet(card1, card2, card3):
     """ This will accept 3 cards and decide if it is a set"""
 
-    return (((card1.color == card2.color and card2.color == card3.color) or (card1.color != card2.color and card1.color != card3.color and card2.color != card3.color)) and
-	    ((card1.shape == card2.shape and card2.shape == card3.shape) or (card1.shape != card2.shape and card1.shape != card3.shape and card2.shape != card3.shape)) and
-	    ((card1.number == card2.number and card2.number == card3.number) or (card1.number != card2.number and card1.number != card3.number and card2.number != card3.number)) and
-	    ((card1.fill == card2.fill and card2.fill == card3.fill) or (card1.fill != card2.fill and card1.fill != card3.fill and card2.fill != card3.fill)))
+    return (((card1.color == card2.color == card3.color) or (card1.color != card2.color and card1.color != card3.color and card2.color != card3.color)) and
+	    ((card1.shape == card2.shape == card3.shape) or (card1.shape != card2.shape and card1.shape != card3.shape and card2.shape != card3.shape)) and
+	    ((card1.number == card2.number == card3.number) or (card1.number != card2.number and card1.number != card3.number and card2.number != card3.number)) and
+	    ((card1.fill == card2.fill == card3.fill) or (card1.fill != card2.fill and card1.fill != card3.fill and card2.fill != card3.fill)))
+
 
 def SolveGame(cards):
     c = len(cards)
-    for i in range(c):
-        for j in range(i, c):
-            for k in (j, c):
+    found = False
+
+    print c
+    for i in range(c-2):
+        for j in range(i+1, c-1):
+            for k in range(j+1, c):
                 if isSet(cards[i], cards[j], cards[k]):
-                    print "FOUND A SET:", cards[i], cards[j], cards[k]
-                
+                    print "FOUND A SET:\n   ", str(cards[i]),"\n   ", str(cards[j]),"\n   ", str(cards[k])
+                    print
+                    found = True
+
+    if found:
+        cv.WaitKey(0)
                 
                 
 

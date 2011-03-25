@@ -13,14 +13,16 @@ hue = f.readline().split()[1]
 brightness = f.readline().split()[1]
 contrast = f.readline().split()[1]
 f.close()
-
-#cv.SetCaptureProperty(capture, cv.CV_CAP_PROP_BRIGHTNESS , .) 
+ 
 cv.SetCaptureProperty(capture, cv.CV_CAP_PROP_HUE , float(hue)) 
 cv.SetCaptureProperty(capture, cv.CV_CAP_PROP_CONTRAST, float(contrast))
-cv.SetCaptureProperty(capture, cv.CV_CAP_PROP_POS_FRAMES, float(brightness))
+cv.SetCaptureProperty(capture, cv.CV_CAP_PROP_BRIGHTNESS, float(brightness))
 
-# Set framerate
-#cv.SetCaptureProperty(capture, cv.CV_CAP_PROP_FPS, 4) # I have no idea about this value
+# This doesn't work with our camera...
+#cv.SetCaptureProperty(capture, cv.CV_CAP_PROP_POS_FRAMES, 0)
+
+# Set framerate - this doesn't work with the PS eye.
+#cv.SetCaptureProperty(capture, cv.CV_CAP_PROP_FPS, 1)
 
 # Set exposure
 #cv.SetCaptureProperty(capture, cv.CV_CAP_PROP_EXPOSURE, 40) # I have no idea about this value
@@ -55,7 +57,9 @@ while 1:
     if runAndProcess:
         groups = processCards.extractCards(frame)
         cards = processCards.getMeaningFromCards(groups, frame)
-        
+        if cards == "break out of this loop":
+            break
+        processCards.SolveGame(cards)
     else:
         cv.ShowImage("webcam", frame)
         cv.WaitKey(100) # wait for a small amount of time

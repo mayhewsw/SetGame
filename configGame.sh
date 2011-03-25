@@ -8,7 +8,7 @@ echo Type enter to save the data, and Esc to exit
 echo Starting in 5 seconds...
 for i in {1..5}
 do
-    echo . -n
+    echo -n . 
 done
 
 #pkill matrix
