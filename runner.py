@@ -3,15 +3,16 @@
 import cv
 import processCards
 import sys
+import subprocess
 
 # create capture device
 device = 0 # assume we want first device
 capture = cv.CreateCameraCapture(device)
 
 
-cv.SetCaptureProperty(capture, cv.CV_CAP_PROP_BRIGHTNESS , .11) 
-cv.SetCaptureProperty(capture, cv.CV_CAP_PROP_HUE , .51) 
-cv.SetCaptureProperty(capture, cv.CV_CAP_PROP_CONTRAST, .21)
+#cv.SetCaptureProperty(capture, cv.CV_CAP_PROP_BRIGHTNESS , .) 
+cv.SetCaptureProperty(capture, cv.CV_CAP_PROP_HUE , .68) 
+cv.SetCaptureProperty(capture, cv.CV_CAP_PROP_CONTRAST, .20)
 cv.SetCaptureProperty(capture, cv.CV_CAP_PROP_POS_FRAMES, 0)
 
 # Set framerate
@@ -41,8 +42,6 @@ while 1:
 
     # capture the current frame
     frame = cv.QueryFrame(capture)
-
-    print cv.GetCaptureProperty(capture, cv.CV_CAP_PROP_FRAME_HEIGHT)
 
     if frame is None:
         print "No frame found. Exiting."

@@ -8,7 +8,7 @@ import math
 # Options are number, fill, color, shape
 # The check is simply:
 #     if "number" in debug: ...
-debug = ""
+debug = "shape"
 
 class Card:
     """ A useful way to store both bounding box and attributes """
@@ -149,9 +149,11 @@ def getMeaningFromCards(groups, image):
     cv.MoveWindow("NewImage",650, 0)
 
     # Around here, we will actually want to solve the game
-    
-    cv.WaitKey(100)
 
+    if len(debug) > 0:
+        cv.WaitKey(0)
+    else:
+        cv.WaitKey(100)
 
 def fillPreProcess(groups, image):
     """ This loop is just for getting information on fill before we do the second (main) loop."""
@@ -232,60 +234,60 @@ def getShape(gray, symbol):
     contours = cv.FindContours( cpy, storage)
 
     # Perimeter/bounding box ratio method -----------------------------
-    #perimeter = cv.ArcLength(contours, isClosed=1)
-    
-    # Ignore contours that are just outlines of the image
-    ## while( abs(cv.ContourArea(contours) - symbol.width*symbol.height) < 15 or
-    ##        perimeter < 60):
-    ##     contours = contours.h_next()
-    ##     perimeter = cv.ArcLength(contours, isClosed=1)
-
-    ## contourRect = cv.BoundingRect(contours)
-    ## cv.DrawContours(cpy,contours,(0,255,0,0),(255,0,0,0),1)
-
-    ## cRectArea = contourRect[2]*contourRect[3]
-    ## ratio = cRectArea/perimeter
-
-    ## if ratio < 16.5:
-    ##     shape = "diamond"
-    ## elif ratio < 20:
-    ##     shape = "squiggle"
-    ## else:
-    ##     shape = "oval"
-    # -----------------------------------------------------------------
-    shape = "oval"
-
     perimeter = cv.ArcLength(contours, isClosed=1)
     
     # Ignore contours that are just outlines of the image
     while( abs(cv.ContourArea(contours) - symbol.width*symbol.height) < 15 or
-           perimeter < 60):
-        contours = contours.h_next()
-        perimeter = cv.ArcLength(contours, isClosed=1)
+            perimeter < 60):
+         contours = contours.h_next()
+         perimeter = cv.ArcLength(contours, isClosed=1)
 
-    approximationStrength = 0
-    polyCont = cv.ApproxPoly(contours, storage, cv.CV_POLY_APPROX_DP, approximationStrength)
+    contourRect = cv.BoundingRect(contours)
+    cv.DrawContours(cpy,contours,(0,255,0,0),(255,0,0,0),1)
 
-    color_dst = cv.CreateImage( cv.GetSize(cpy), 8, 3 );
-    cv.CvtColor( cpy, color_dst, cv.CV_GRAY2BGR );
+    cRectArea = contourRect[2]*contourRect[3]
+    ratio = cRectArea/perimeter
 
-    cv.SetZero(cpy)
-    cv.DrawContours(cpy,polyCont,(0,255,0,0),(255,0,0,0),1)
+    if ratio < 11:
+        shape = "squiggle"
+    elif ratio < 12:
+        shape = "oval"
+    else:
+        shape = "diamond"
+    # -----------------------------------------------------------------
+    #shape = "oval"
 
-    box = cv.MinAreaRect2(contours)
-    box_vtx = [roundxy(p) for p in cv.BoxPoints(box)]
-    cv.PolyLine(color_dst, [box_vtx], 1, cv.CV_RGB(0, 255, 255), 1, cv. CV_AA) 
+    #perimeter = cv.ArcLength(contours, isClosed=1)
+    
+    # Ignore contours that are just outlines of the image
+    #while( abs(cv.ContourArea(contours) - symbol.width*symbol.height) < 15 or
+           #perimeter < 60):
+        #contours = contours.h_next()
+        #perimeter = cv.ArcLength(contours, isClosed=1)
+
+    #approximationStrength = 0
+    #polyCont = cv.ApproxPoly(contours, storage, cv.CV_POLY_APPROX_DP, approximationStrength)
+
+    #color_dst = cv.CreateImage( cv.GetSize(cpy), 8, 3 );
+    #cv.CvtColor( cpy, color_dst, cv.CV_GRAY2BGR );
+
+    #cv.SetZero(cpy)
+    #cv.DrawContours(cpy,polyCont,(0,255,0,0),(255,0,0,0),1)
+
+    #box = cv.MinAreaRect2(contours)
+    #box_vtx = [roundxy(p) for p in cv.BoxPoints(box)]
+    #cv.PolyLine(color_dst, [box_vtx], 1, cv.CV_RGB(0, 255, 255), 1, cv. CV_AA) 
 
     # Compare contour length to area of rotated bounding box
-    bp = cv.BoxPoints(box)
-    cv.Line(color_dst, bp[0], bp[2], (0,0,255,0), 1, 1);
+    #bp = cv.BoxPoints(box)
+    #cv.Line(color_dst, bp[0], bp[2], (0,0,255,0), 1, 1);
 
-    width = (bp[0][1] - bp[2][1])
-    height = (bp[0][0] - bp[2][0])
+    #width = (bp[0][1] - bp[2][1])
+    #height = (bp[0][0] - bp[2][0])
 
-    rotateArea = abs(width * height)
+    #rotateArea = abs(width * height)
 
-    print rotateArea/perimeter
+    #print rotateArea/perimeter
 
     # Do houghlines transform on cpy
     ## pi = 3
@@ -304,10 +306,10 @@ def getShape(gray, symbol):
     if "shape" in debug:
         #cv.ShowImage("gray", gray)
         cv.ShowImage("cpy",cpy)
-        cv.ShowImage("color_dst",color_dst)
+        #cv.ShowImage("color_dst",color_dst)
         #print cRectArea
-        #print "Perimeter: ", perimeter
-        #print "Ratio: ", ratio
+        print "Perimeter: ", perimeter
+        print "Ratio: ", ratio
         cv.WaitKey(0)
     #+++++++++++++++++++++++++++++++++++++++++++++++
         
@@ -685,7 +687,7 @@ if __name__ == '__main__':
     #    image = cv.LoadImage(name)
     #    cards[(0,i)] = image
 
-    image = cv.LoadImage("images/lamp2.jpg")
+    image = cv.LoadImage("images/lamp1.jpg")
     groups = extractCards(image)
     getMeaningFromCards(groups, image)
 
