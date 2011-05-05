@@ -23,9 +23,9 @@ def getMeaningFromCards(groups, image):
     for g in groups:
         ## card = cards[k]
         
-        card = cv.GetSubRect(image, g[0])
-        gray = cv.CreateImage((card.width, card.height), 8, 1)
-        cv.CvtColor(card, gray, cv.CV_RGB2GRAY)
+        symbol = cv.GetSubRect(image, g[0])
+        gray = cv.CreateImage((symbol.width, symbol.height), 8, 1)
+        cv.CvtColor(symbol, gray, cv.CV_BGR2GRAY)
     
         cv.Smooth(gray, gray)
         
@@ -44,28 +44,27 @@ def getMeaningFromCards(groups, image):
         # .......................
 
     
-        cv.ShowImage("card", card)
-        cv.ShowImage("img", gray)
-        cv.WaitKey(0)
+        #cv.ShowImage("symbol", symbol)
+        #cv.ShowImage("img", gray)
+        #cv.WaitKey(0)
 
         cpy = cv.CloneImage(gray)
         storage = cv.CreateMemStorage (0)
         contours = cv.FindContours( cpy, storage, cv.CV_RETR_LIST, cv.CV_CHAIN_APPROX_SIMPLE, (0,0) )
 
         #print cv.ContourArea(contours)
-        #print card.width*card.height
-        #print abs(cv.ContourArea(contours) - card.width*card.height)
+        #print symbol.width*symbol.height
+        #print abs(cv.ContourArea(contours) - symbol.width*symbol.height)
         
-        while( abs(cv.ContourArea(contours) - card.width*card.height) < 15):
+        while( abs(cv.ContourArea(contours) - symbol.width*symbol.height) < 15):
             contours = contours.h_next()
 
         perimeter = cv.ArcLength(contours, isClosed=1)
         
-        cv.DrawContours(card,contours,(0,255,0,0) ,(255,0,0,),1)
+        #cv.DrawContours(symbol,contours,(0,255,0,0) ,(255,0,0,),1)
         
-        cv.ShowImage('img', card)
-        cv.WaitKey(0)
-
+        #cv.ShowImage('img', symbol)
+        #cv.WaitKey(0)
         ## area1, area2, area3 = 0, 0, 0
         ## rect1 = (0,0,0,0)
         ## rect2 = (0,0,0,0)
@@ -76,7 +75,7 @@ def getMeaningFromCards(groups, image):
         ##     while(contours):
         ##         area = cv.ContourArea(contours)
                 
-        ##         if abs(area - card.height*card.width) < 2000:
+        ##         if abs(area - symbol.height*symbol.width) < 2000:
         ##             contours = contours.h_next()
         ##             continue
 
@@ -102,60 +101,104 @@ def getMeaningFromCards(groups, image):
                 
         ##         contours = contours.h_next()
 
-        # Get number - 1, 2, 3
-        # check if bounding the corners of bounding boxes are close to each other
-        #bb = [rect1, rect2, rect3]
-        #symbolsAreLargerThanThis = 100
-        #bbf = filter(lambda b: b[2]*b[3] > symbolsAreLargerThanThis, bb)
-        #distbb = findDistinctBoxes(bbf)
-        #number = len(distbb)
 
         # g is the group of all symbols on the cards
         number = len(g)
         
         # Get color - red, green, purple
-        color = 0
-        color_mask = cv.CreateImage(cv.GetSize(card), 8, 1)
+        color = "undefined"
+        color_mask = cv.CreateImage(cv.GetSize(symbol), 8, 1)
+        ones = cv.CreateImage(cv.GetSize(symbol), 8, 3)
+        cv.SetZero(ones)
+        cv.Not(ones, ones)
 
 
         # Specify the minimum / maximum colors to look for:
         # Find the pixels within the color-range, and put the output in the color_mask
-        min_color_red = (0, 0, 0)
-        max_color_red = (1, 1, 255)
-        cv.InRangeS(card, cv.Scalar(*min_color_red), cv.Scalar(*max_color_red), color_mask)
+        min_color_red = (140, 140, 140)
+        max_color_red = (255, 255, 255)
+        cv.InRangeS(symbol, cv.Scalar(*min_color_red), cv.Scalar(*max_color_red), color_mask)
         reds = cv.CountNonZero(color_mask)
-        cv.SetZero(color_mask)
+        cv.ShowImage('color', color_mask)
 
-        min_color_green = (0, 0, 0)
-        max_color_green = (1, 255, 1)
-        cv.InRangeS(card, cv.Scalar(*min_color_green), cv.Scalar(*max_color_green), color_mask)
-        greens = cv.CountNonZero(color_mask)
-        cv.SetZero(color_mask)
+        cv.Not(color_mask, color_mask)
+        
+        
+        cv.ShowImage('ones', ones)
 
-        min_color_purple = (0, 0, 0)
-        max_color_purple = (255, 1, 1)
-        cv.InRangeS(card, cv.Scalar(*min_color_purple), cv.Scalar(*max_color_purple), color_mask)
-        purples = cv.CountNonZero(color_mask)
+
+        #min_color_green = (0, 0, 0)
+        #max_color_green = (1, 255, 1)
+        #cv.InRangeS(symbol, cv.Scalar(*min_color_green), cv.Scalar(*max_color_green), color_mask)
+        #greens = cv.CountNonZero(color_mask)
+        #cv.SetZero(color_mask)
+
+        #min_color_purple = (0, 0, 0)
+        #max_color_purple = (255, 1, 1)
+        #cv.InRangeS(symbol, cv.Scalar(*min_color_purple), cv.Scalar(*max_color_purple), color_mask)
+        #purples = cv.CountNonZero(color_mask)
 
         #print reds, greens, purples
         #print "Std. Dev.:",numpy.std([reds, greens, purples])
-        #cv.ShowImage("mask" + str(k), color_mask)
+        #cv.ShowImage("mask", color_mask)
         #cv.WaitKey(0)
 
         # Here's a bad way to do this: red and green are always clear.
         # If it is clearly either red or green, call it as such. Otherwise, call it purple.
-        m = max(reds, greens, purples)
-        if reds == m:
-            color = "red"
-        elif greens == m:
-            color = "green"
-        else:
-            color = "purple"
+        ## print reds, greens, purples
+        ## m = max(reds, greens, purples)
+        ## if reds == m:
+        ##     color = "red"
+        ## elif greens == m:
+        ##     color = "green"
+        ## else:
+        ##     color = "purple
+            
 
+        # Get color
+
+        #Convert to HSV first, increase saturation, and convert back
+        hsvimg = cv.CreateImage((symbol.width, symbol.height), 8, 3)
+        cv.CvtColor(symbol, hsvimg, cv.CV_BGR2HSV)
+
+        saturationShift = 200 # this is huge. It makes the images somewhat ridiculous, but it may be useful.
+        for i in range(hsvimg.width):
+            for j in range(hsvimg.height):                
+                p = cv.Get2D(hsvimg, j, i)
+                p = (p[0], p[1] + saturationShift, p[2])
+                cv.Set2D(hsvimg, j, i, p)
+
+
+
+        cv.CvtColor(hsvimg, symbol, cv.CV_HSV2BGR)
+
+        cv.Copy(symbol, ones, color_mask)
+        symbol = ones
+
+        rchannel = cv.CreateImage((symbol.width, symbol.height), 8, 1)
+        gchannel = cv.CreateImage((symbol.width, symbol.height), 8, 1)
+        bchannel = cv.CreateImage((symbol.width, symbol.height), 8, 1)
+        cv.Split(symbol,bchannel,gchannel,rchannel,None)
+
+        cv.ShowImage('rchan', rchannel)
+        cv.ShowImage('gchan', gchannel)
+        cv.ShowImage('bchan', bchannel)
+
+                     
+        cv.ShowImage("symbol", symbol)
+
+        cv.MoveWindow("symbol", 20, 200)
+        cv.MoveWindow("rchan", 70, 200)
+        cv.MoveWindow("gchan", 120, 200)
+        cv.MoveWindow("bchan", 170, 200)
+        cv.MoveWindow("color", 220, 200)
+        
+        cv.WaitKey(0)
+        
         # Draw rects
-        ##cv.Rectangle(card, (rect1[0], rect1[1]), ( rect1[0] + rect1[2], rect1[1] + rect1[3]), (255,0,0,0))
-        #cv.Rectangle(card, (rect2[0], rect2[1]), ( rect2[0] + rect2[2], rect2[1] + rect2[3]), (255,0,0,0))
-        #cv.Rectangle(card, (rect3[0], rect3[1]), ( rect3[0] + rect3[2], rect3[1] + rect3[3]), (255,0,0,0))
+        ##cv.Rectangle(symbol, (rect1[0], rect1[1]), ( rect1[0] + rect1[2], rect1[1] + rect1[3]), (255,0,0,0))
+        #cv.Rectangle(symbol, (rect2[0], rect2[1]), ( rect2[0] + rect2[2], rect2[1] + rect2[3]), (255,0,0,0))
+        #cv.Rectangle(symbol, (rect3[0], rect3[1]), ( rect3[0] + rect3[2], rect3[1] + rect3[3]), (255,0,0,0))
 
         # Get fill - empty, full, shaded
         r,gr,b,total = 0,0,0,0
@@ -178,7 +221,7 @@ def getMeaningFromCards(groups, image):
             
         
         # Get shape - oval, diamond, squiggly
-        ratio = (card.width*card.height)/perimeter
+        ratio = (symbol.width*symbol.height)/perimeter
         if ratio < 16.5:
             shape = "diamond"
         elif ratio < 20:
@@ -188,9 +231,9 @@ def getMeaningFromCards(groups, image):
 
         if number > 1: shape += "s"
         print number, fill, color, shape
-        #cards[k] = (color, fill, number, shape)
-        cv.ShowImage("img", card)
-        cv.WaitKey(0)
+        #symbols[k] = (color, fill, number, shape)
+        #cv.ShowImage("img", symbol)
+        #cv.WaitKey(0)
 
 
 # Given a list of bounding boxes, with many duplicates, or boxes close to each other, 
@@ -258,9 +301,9 @@ def extractCards(image):
     cv.Dilate(gray, gray)
 
 
-    cv.Not(gray,gray)
-    cv.ShowImage("sub", gray)
-    cv.WaitKey(0)
+    #cv.Not(gray,gray)
+    #cv.ShowImage("sub", gray)
+    #cv.WaitKey(0)
 
     storage = cv.CreateMemStorage (0)
 
@@ -358,7 +401,7 @@ def groupBoxes(boxes, image):
             width = b[2]
             height = b[3]
         
-            cv.Rectangle(image, (x,y), (x+width, y+height), (0,255,0,0))
+            #cv.Rectangle(image, (x,y), (x+width, y+height), (0,255,0,0))
 
         #cv.ShowImage('img', image)
         #cv.WaitKey(0)
@@ -368,10 +411,6 @@ def groupBoxes(boxes, image):
         
 
     
-    
-
-
-
 def drawBoundingBoxes(bb, img):
     for b in bb:
         x = b[0]
@@ -380,8 +419,8 @@ def drawBoundingBoxes(bb, img):
         height = b[3]
         #cv.Rectangle(img, (x,y), (x+width, y+height), (0,255,0,0))
 
-    cv.ShowImage("bb", img)
-    cv.WaitKey(0)
+    #cv.ShowImage("bb", img)
+    #cv.WaitKey(0)
     
 def findDistinctBoxes(boundingboxes):
     """Given a list of bounding boxes, with many duplicates, or boxes close to each other,
