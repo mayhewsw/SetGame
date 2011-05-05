@@ -6,7 +6,7 @@ import cv
 #import numpy
 import time
 import os
-import string
+#import string
 #import Image
 import random
 #import numpy
