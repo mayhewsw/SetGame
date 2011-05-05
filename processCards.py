@@ -1,17 +1,17 @@
 3# Process cards for the Set Solver game
 # Stephen Mayhew - April 23, 2011
 
-import gtk.gdk
+#import gtk.gdk
 import cv
-import numpy
+#import numpy
 import time
 import os
 import string
-import Image
+#import Image
 import random
-import numpy
+#import numpy
 
-def getMeaningFromCards(cards):
+def getMeaningFromCards(groups, image):
     """
     This takes a dictionary of the form:
          (x, y) : Card image
@@ -20,73 +20,103 @@ def getMeaningFromCards(cards):
 
     (x, y) are the coordinates of the top left of the card
     """
-    for k in cards.keys():
-        card = cards[k]
-
+    for g in groups:
+        ## card = cards[k]
+        
+        card = cv.GetSubRect(image, g[0])
         gray = cv.CreateImage((card.width, card.height), 8, 1)
         cv.CvtColor(card, gray, cv.CV_RGB2GRAY)
     
         cv.Smooth(gray, gray)
         
-
-        cv.Threshold(gray, gray, 40, 255, cv.CV_THRESH_BINARY)
-
+        # Either this..........
+        #cv.Threshold(gray, gray, 60, 255, cv.CV_THRESH_BINARY)
+        #cv.AdaptiveThreshold(gray,gray,255,blockSize=3)
         #cv.Not(gray,gray)
 
-        #cv.ShowImage("img", gray)
-        #cv.WaitKey(0)
+        # Or this ...........
+        cpy1 = cv.CloneImage(gray)
+        cv.Canny(gray, gray, 50,100)
+        
+        #cv.Erode(gray, gray)
+        #cv.Erode(gray, gray)
+        #cv.Dilate(gray, gray)
+        # .......................
+
+    
+        cv.ShowImage("card", card)
+        cv.ShowImage("img", gray)
+        cv.WaitKey(0)
 
         cpy = cv.CloneImage(gray)
         storage = cv.CreateMemStorage (0)
-        contours = cv.FindContours( cpy, storage, cv.CV_RETR_LIST, cv.CV_CHAIN_APPROX_SIMPLE, (0,0) );
+        contours = cv.FindContours( cpy, storage, cv.CV_RETR_LIST, cv.CV_CHAIN_APPROX_SIMPLE, (0,0) )
 
-        area1, area2, area3 = 0, 0, 0
-        rect1 = (0,0,0,0)
-        rect2 = (0,0,0,0)
-        rect3 = (0,0,0,0)
+        #print cv.ContourArea(contours)
+        #print card.width*card.height
+        #print abs(cv.ContourArea(contours) - card.width*card.height)
         
-        perimeter = 0
-        if contours:
-            while(contours):
-                area = cv.ContourArea(contours)
+        while( abs(cv.ContourArea(contours) - card.width*card.height) < 15):
+            contours = contours.h_next()
+
+        perimeter = cv.ArcLength(contours, isClosed=1)
+        
+        cv.DrawContours(card,contours,(0,255,0,0) ,(255,0,0,),1)
+        
+        cv.ShowImage('img', card)
+        cv.WaitKey(0)
+
+        ## area1, area2, area3 = 0, 0, 0
+        ## rect1 = (0,0,0,0)
+        ## rect2 = (0,0,0,0)
+        ## rect3 = (0,0,0,0)
+        
+        ## perimeter = 0
+        ## if contours:
+        ##     while(contours):
+        ##         area = cv.ContourArea(contours)
                 
-                if abs(area - card.height*card.width) < 2000:
-                    contours = contours.h_next()
-                    continue
+        ##         if abs(area - card.height*card.width) < 2000:
+        ##             contours = contours.h_next()
+        ##             continue
 
-                if area > area1:
-                    perimeter = cv.ArcLength(contours, isClosed=1)
-                    area3 = area2
-                    area2 = area1
-                    area1 = area
+        ##         if area > area1:
+        ##             perimeter = cv.ArcLength(contours, isClosed=1)
+        ##             area3 = area2
+        ##             area2 = area1
+        ##             area1 = area
 
-                    rect3 = rect2
-                    rect2 = rect1
-                    rect1 = cv.BoundingRect(contours)
-                elif (area > area2):
-                    area3 = area2
-                    area2 = area
+        ##             rect3 = rect2
+        ##             rect2 = rect1
+        ##             rect1 = cv.BoundingRect(contours)
+        ##         elif (area > area2):
+        ##             area3 = area2
+        ##             area2 = area
 
-                    rect3 = rect2
-                    rect2 = cv.BoundingRect(contours)
-                elif (area > area3):
-                    area3 = area
+        ##             rect3 = rect2
+        ##             rect2 = cv.BoundingRect(contours)
+        ##         elif (area > area3):
+        ##             area3 = area
 
-                    rect3 = cv.BoundingRect(contours)
+        ##             rect3 = cv.BoundingRect(contours)
                 
-                contours = contours.h_next()
+        ##         contours = contours.h_next()
 
         # Get number - 1, 2, 3
         # check if bounding the corners of bounding boxes are close to each other
-        bb = [rect1, rect2, rect3]
-        symbolsAreLargerThanThis = 100
-        bbf = filter(lambda b: b[2]*b[3] > symbolsAreLargerThanThis, bb)
-        distbb = findDistinctBoxes(bbf)
-        number = len(distbb)
+        #bb = [rect1, rect2, rect3]
+        #symbolsAreLargerThanThis = 100
+        #bbf = filter(lambda b: b[2]*b[3] > symbolsAreLargerThanThis, bb)
+        #distbb = findDistinctBoxes(bbf)
+        #number = len(distbb)
 
+        # g is the group of all symbols on the cards
+        number = len(g)
+        
         # Get color - red, green, purple
         color = 0
         color_mask = cv.CreateImage(cv.GetSize(card), 8, 1)
+
 
         # Specify the minimum / maximum colors to look for:
         # Find the pixels within the color-range, and put the output in the color_mask
@@ -123,23 +153,22 @@ def getMeaningFromCards(cards):
             color = "purple"
 
         # Draw rects
-        #cv.Rectangle(card, (rect1[0], rect1[1]), ( rect1[0] + rect1[2], rect1[1] + rect1[3]), (255,0,0,0))
+        ##cv.Rectangle(card, (rect1[0], rect1[1]), ( rect1[0] + rect1[2], rect1[1] + rect1[3]), (255,0,0,0))
         #cv.Rectangle(card, (rect2[0], rect2[1]), ( rect2[0] + rect2[2], rect2[1] + rect2[3]), (255,0,0,0))
         #cv.Rectangle(card, (rect3[0], rect3[1]), ( rect3[0] + rect3[2], rect3[1] + rect3[3]), (255,0,0,0))
 
-        
         # Get fill - empty, full, shaded
-        r,g,b,total = 0,0,0,0
+        r,gr,b,total = 0,0,0,0
         cv.Erode(gray, gray, None, 3)
         cv.Dilate(gray, gray, None, 3)
-        for i in range(rect1[1], rect1[1] + rect1[3]):
-            pixel = cv.Get2D(card, i, rect1[0] + rect1[2]/2)
+        for i in range(g[0][1], g[0][1] + g[0][3]):
+            pixel = cv.Get2D(image, i, g[0][0] + g[0][2]/2)
             r += pixel[2]
-            g += pixel[1]
+            gr += pixel[1]
             b += pixel[0]
 
         # The hard numbers below are found by experimentation
-        total = r + g + b
+        total = r + gr + b
         if total < 10000:
             fill = "solid"
         elif total < 30000:
@@ -149,7 +178,7 @@ def getMeaningFromCards(cards):
             
         
         # Get shape - oval, diamond, squiggly
-        ratio = area1/perimeter
+        ratio = (card.width*card.height)/perimeter
         if ratio < 16.5:
             shape = "diamond"
         elif ratio < 20:
@@ -188,7 +217,7 @@ def findDistinctBoxes(boundingboxes):
     return distbb
 
 
-def extractCards(fileName = None):
+def extractCards(image):
     """
     Given an image, this will extract the cards from it.
 
@@ -201,17 +230,17 @@ def extractCards(fileName = None):
     getMeaningFromCards() function.
     """
     
-    if fileName == None:
-        print "File name cannot be none..."
-        sys.exit(1)
-    else:
-        submat = cv.LoadImage(fileName)
+    #if fileName == None:
+    #    print "File name cannot be none..."
+    #    sys.exit(1)
+    #else:
+    #    image = cv.LoadImage(fileName)
 
-    subImg = cv.CreateImageHeader((submat.width, submat.height), 8, 3)
-    cv.SetData(subImg, submat.tostring())
+    #subImg = cv.CreateImageHeader((submat.width, submat.height), 8, 3)
+    #cv.SetData(subImg, submat.tostring())
 
-    gray = cv.CreateImage((submat.width, submat.height), 8, 1)
-    cv.CvtColor(submat, gray, cv.CV_RGB2GRAY)
+    gray = cv.CreateImage((image.width, image.height), 8, 1)
+    cv.CvtColor(image, gray, cv.CV_RGB2GRAY)
 
     cv.Smooth(gray, gray)
 
@@ -219,7 +248,7 @@ def extractCards(fileName = None):
     thresh = 90 # play around with this 
     max_value = 255
     #cv.Threshold(gray, gray, thresh, max_value, cv.CV_THRESH_BINARY)
-    #cv.AdaptiveThreshold(gray,gray,max_value)
+    #cv.AdaptiveThreshold(gray,gray,max_value,blockSize=11)
     
     cpy1 = cv.CloneImage(gray)
     cv.Canny(gray, gray, 50,100)
@@ -229,7 +258,7 @@ def extractCards(fileName = None):
     cv.Dilate(gray, gray)
 
 
-    #cv.Not(gray,gray)
+    cv.Not(gray,gray)
     cv.ShowImage("sub", gray)
     cv.WaitKey(0)
 
@@ -239,8 +268,7 @@ def extractCards(fileName = None):
     contours = cv.FindContours( cpy, storage, cv.CV_RETR_LIST, cv.CV_CHAIN_APPROX_SIMPLE, (0,0) );
     #contours = cv.ApproxPoly(contours, cv.CreateMemStorage(), cv.CV_POLY_APPROX_DP, 3, 1)
 
-    bboxesL = []
-    bboxesS = []
+    bboxes = []
 
     if contours:
         while(contours):
@@ -251,35 +279,109 @@ def extractCards(fileName = None):
             # For Set, we can statistically find the average...also use an
             # expected value
             storage2 = cv.CreateMemStorage (0)
-            app = cv.ApproxPoly(contours, storage2, cv.CV_POLY_APPROX_DP, 0)
+            #app = cv.ApproxPoly(contours, storage2, cv.CV_POLY_APPROX_DP, 0)
+            app = contours
             
-            if (area > 250 and area < 1000 and area < submat.width*submat.height*2/3):
-                bboxesS.append(app)
+            if (area > 250 and area < 5000 and area < image.width*image.height*2/3):
+                b = cv.BoundingRect(app)
 
-            if (area > 1000 and area < submat.width*submat.height*2/3):
-                bboxesL.append(app)
+                # Inflate the rectangles slightly
+                amount = 5
+                b = (b[0] - amount,
+                     b[1] - amount,
+                     b[2] + 2*amount,
+                     b[3] + 2*amount)
+                
+                bboxes.append(b)
                 
             contours = contours.h_next()
 
 
-    #bboxesS = findDistinctBoxes(bboxesS)
-    drawBoundingBoxes(bboxesL, submat)
-    drawBoundingBoxes(bboxesS, submat, "red")
+    bboxes = findDistinctBoxes(bboxes)
+
+    #for c in bboxesS:
+    #    cv.DrawContours(image,c,(0,255,0,0) ,(255,0,0,),1)
+
+    return groupBoxes(bboxes, image)
 
 
-    # cards is a dictionary of the form:
-    #    (x, y) : card     // still useful even for set, because we will want to project onto it.
+def groupBoxes(boxes, image):
+    ''' this takes a list of lots of boxes, and returns a list of boxes that has grouped
+    all similar boxes together'''
+        
+    # sort the list first by x, then by y
+    # WARNING: could be fragile
+    rowHeight = image.height/4
+
+    topRow = filter(lambda b: b[1] < rowHeight, boxes)
+    topmiddleRow = filter(lambda b: rowHeight < b[1] < rowHeight*2, boxes)
+    bottommiddleRow = filter(lambda b: rowHeight*2 < b[1] < rowHeight*3, boxes)
+    bottomRow = filter(lambda b: rowHeight*3 < b[1], boxes)
     
-    cards = {}
+    rows = [topRow, topmiddleRow, bottommiddleRow, bottomRow]
+
+    final = []
     
-    #for box in bboxesL:
-        #card = cv.GetSubRect(subImg, box)
-        #cv.ShowImage("card", card)
+    for r in rows:
+         final += sorted(r, key=lambda p: p[0])
+
+    groupsOfCards = []
+    currentGroup = []
+    #distance = 50 # play around with this
+    fudge = 7
+    for b in final:
+        l = len(currentGroup)
+        if l == 0:
+            currentGroup.append(b)
+        elif l == 1 or l == 2:
+            # check if x-distance (might be fragile) from last element in current group is above a certain threshold compared to b
+            last = currentGroup[l-1]
+            # if above, append, and clear
+            if abs(last[0] - b[0]) > last[2]+fudge:
+                groupsOfCards.append(currentGroup)
+                currentGroup = [b]
+            else:  # if below, add, and continue
+                currentGroup.append(b)
+        else:
+            groupsOfCards.append(currentGroup)
+            currentGroup = [b]
+
+    # This will be the last card
+    groupsOfCards.append(currentGroup)
+
+
+    # entirely for testing +++++
+    for g in groupsOfCards:
+        for b in g:
+            x = b[0]
+            y = b[1]
+            width = b[2]
+            height = b[3]
+        
+            cv.Rectangle(image, (x,y), (x+width, y+height), (0,255,0,0))
+
+        #cv.ShowImage('img', image)
         #cv.WaitKey(0)
-        #cards[(box[0], box[1])] = card
+    # ++++++++++++++++++++++++++++++
+                    
+    return groupsOfCards
+        
+
+    
+    
 
 
-    return cards
+
+def drawBoundingBoxes(bb, img):
+    for b in bb:
+        x = b[0]
+        y = b[1]
+        width = b[2]
+        height = b[3]
+        #cv.Rectangle(img, (x,y), (x+width, y+height), (0,255,0,0))
+
+    cv.ShowImage("bb", img)
+    cv.WaitKey(0)
     
 def findDistinctBoxes(boundingboxes):
     """Given a list of bounding boxes, with many duplicates, or boxes close to each other,
@@ -288,6 +390,8 @@ def findDistinctBoxes(boundingboxes):
     # First, find distinct boundboxes. Would be better to sort them, and find the max...
     distbb = []
     nb = 20
+
+    boundingboxes.reverse()
     
     #boundingboxes = sorted(boundingboxes, key = lambda boundingboxes : boundingboxes.x)
 
@@ -308,12 +412,14 @@ def findDistinctBoxes(boundingboxes):
 
 
 if __name__ == '__main__':
-    cards = {}
-    for i in range(30):
-        #n = random.randint(0, 80)
-        name = 'images/image%05d.bmp' % i
-        image = cv.LoadImage(name)
-        cards[(0,i)] = image
+    #cards = {}
+    #for i in range(0):
+    #    n = random.randint(0, 80)
+    #    name = 'images/image%05d.bmp' % i
+    #    image = cv.LoadImage(name)
+    #    cards[(0,i)] = image
 
-    getMeaningFromCards(cards)
+    image = cv.LoadImage("images/lamp1.jpg")
+    groups = extractCards(image)
+    getMeaningFromCards(groups, image)
 
