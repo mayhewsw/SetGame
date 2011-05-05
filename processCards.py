@@ -4,11 +4,11 @@
 #import gtk.gdk
 import cv
 #import numpy
-import time
-import os
+#import time
+#import os
 #import string
 #import Image
-import random
+#import random
 #import numpy
 
 def getMeaningFromCards(groups, image):
