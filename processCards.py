@@ -68,24 +68,25 @@ def getMeaningFromCards(groups, image):
         
         # Get color - red, green, purple
         color = "undefined"
+
+        # color mask is a binary image
+        # white for pixels we are interested in
+        # black for pixels not interested in
         color_mask = cv.CreateImage(cv.GetSize(symbol), 8, 1)
-        ones = cv.CreateImage(cv.GetSize(symbol), 8, 3)
-        cv.SetZero(ones)
-        cv.Not(ones, ones)
 
-        # mask out the background
-        min_color_red = (140, 140, 140)
-        max_color_red = (255, 255, 255)
-        cv.InRangeS(symbol, cv.Scalar(*min_color_red), cv.Scalar(*max_color_red), color_mask)
-        reds = cv.CountNonZero(color_mask)
-        cv.ShowImage('color', color_mask)
+        # mask out the background -> put it to black
+        # The background is mostly white,
+        # So find all pixels that are above a certain threshold
+        min_color = (140, 140, 140)
+        max_color = (255, 255, 255)
+        cv.InRangeS(symbol, cv.Scalar(*min_color), cv.Scalar(*max_color), color_mask)
 
-        #cv.Not(color_mask, color_mask)
+        # Those pixels will go to black, so invert the image
+        cv.Not(color_mask, color_mask)
+
         
-        
-        cv.ShowImage('ones', ones)
+        cv.ShowImage('color', color_mask)        
 
-        # Get color
 
         #Convert to HSV first, increase saturation, and convert back
         hsvimg = cv.CreateImage((symbol.width, symbol.height), 8, 3)
@@ -102,9 +103,16 @@ def getMeaningFromCards(groups, image):
 
         cv.CvtColor(hsvimg, symbol, cv.CV_HSV2BGR)
 
+        # Just want a black image for use later
+        ones = cv.CreateImage(cv.GetSize(symbol), 8, 3)
+        cv.SetZero(ones)
+
+        # Copy the symbol over to ones, with color_mask as the mask
+        # This effectively copies only the symbol over.
         cv.Copy(symbol, ones, color_mask)
         symbol = ones
 
+        # Split it into channels
         rchannel = cv.CreateImage((symbol.width, symbol.height), 8, 1)
         gchannel = cv.CreateImage((symbol.width, symbol.height), 8, 1)
         bchannel = cv.CreateImage((symbol.width, symbol.height), 8, 1)
