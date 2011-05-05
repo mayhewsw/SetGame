@@ -100,18 +100,17 @@ def getMeaningFromCards(groups, image):
                 p = (p[0], p[1] + saturationShift, p[2])
                 cv.Set2D(hsvimg, j, i, p)
 
-
-
+        # Convert the HSV img back to BGR
         cv.CvtColor(hsvimg, symbol, cv.CV_HSV2BGR)
 
-        # Just want a black image for use later
-        ones = cv.CreateImage(cv.GetSize(symbol), 8, 3)
-        cv.SetZero(ones)
+        # Just want a black image
+        zeros = cv.CreateImage(cv.GetSize(symbol), 8, 3)
+        cv.SetZero(zeros)
 
-        # Copy the symbol over to ones, with color_mask as the mask
+        # Copy the symbol over to zeros, with color_mask as the mask
         # This effectively copies only the symbol over.
-        cv.Copy(symbol, ones, color_mask)
-        symbol = ones
+        cv.Copy(symbol, zeros, color_mask)
+        symbol = zeros
 
         # Split it into channels
         rchannel = cv.CreateImage((symbol.width, symbol.height), 8, 1)
@@ -119,6 +118,21 @@ def getMeaningFromCards(groups, image):
         bchannel = cv.CreateImage((symbol.width, symbol.height), 8, 1)
         cv.Split(symbol,bchannel,gchannel,rchannel,None)
 
+        reds = cv.Sum(rchannel)
+        greens = cv.Sum(gchannel)
+        blues = cv.Sum(bchannel)
+        #print reds[0], greens[0], blues[0]
+
+        m = max(reds[0], greens[0], blues[0])
+        
+        if m == reds[0]:
+            color = "red"
+        elif m == greens[0]:
+            color = "green"
+        else:
+            color = "purple"
+
+        # For testing ++++++++++++++++++++++++++++++++
         cv.ShowImage('rchan', rchannel)
         cv.ShowImage('gchan', gchannel)
         cv.ShowImage('bchan', bchannel)
@@ -131,8 +145,9 @@ def getMeaningFromCards(groups, image):
         cv.MoveWindow("gchan", 120, 200)
         cv.MoveWindow("bchan", 170, 200)
         cv.MoveWindow("color", 220, 200)
-        
-        cv.WaitKey(0)
+    
+        # ++++++++++++++++++++++++++++++++++++++++++++++++
+
         
         # Draw rects
         ##cv.Rectangle(symbol, (rect1[0], rect1[1]), ( rect1[0] + rect1[2], rect1[1] + rect1[3]), (255,0,0,0))
@@ -172,7 +187,7 @@ def getMeaningFromCards(groups, image):
         print number, fill, color, shape
         #symbols[k] = (color, fill, number, shape)
         #cv.ShowImage("img", symbol)
-        #cv.WaitKey(0)
+        cv.WaitKey(0)
 
 
 # Given a list of bounding boxes, with many duplicates, or boxes close to each other, 
