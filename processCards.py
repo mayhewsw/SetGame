@@ -60,48 +60,7 @@ def getMeaningFromCards(groups, image):
             contours = contours.h_next()
 
         perimeter = cv.ArcLength(contours, isClosed=1)
-        
-        #cv.DrawContours(symbol,contours,(0,255,0,0) ,(255,0,0,),1)
-        
-        #cv.ShowImage('img', symbol)
-        #cv.WaitKey(0)
-        ## area1, area2, area3 = 0, 0, 0
-        ## rect1 = (0,0,0,0)
-        ## rect2 = (0,0,0,0)
-        ## rect3 = (0,0,0,0)
-        
-        ## perimeter = 0
-        ## if contours:
-        ##     while(contours):
-        ##         area = cv.ContourArea(contours)
-                
-        ##         if abs(area - symbol.height*symbol.width) < 2000:
-        ##             contours = contours.h_next()
-        ##             continue
-
-        ##         if area > area1:
-        ##             perimeter = cv.ArcLength(contours, isClosed=1)
-        ##             area3 = area2
-        ##             area2 = area1
-        ##             area1 = area
-
-        ##             rect3 = rect2
-        ##             rect2 = rect1
-        ##             rect1 = cv.BoundingRect(contours)
-        ##         elif (area > area2):
-        ##             area3 = area2
-        ##             area2 = area
-
-        ##             rect3 = rect2
-        ##             rect2 = cv.BoundingRect(contours)
-        ##         elif (area > area3):
-        ##             area3 = area
-
-        ##             rect3 = cv.BoundingRect(contours)
-                
-        ##         contours = contours.h_next()
-
-
+    
         # g is the group of all symbols on the cards
         number = len(g)
         
@@ -125,35 +84,6 @@ def getMeaningFromCards(groups, image):
         
         
         cv.ShowImage('ones', ones)
-
-
-        #min_color_green = (0, 0, 0)
-        #max_color_green = (1, 255, 1)
-        #cv.InRangeS(symbol, cv.Scalar(*min_color_green), cv.Scalar(*max_color_green), color_mask)
-        #greens = cv.CountNonZero(color_mask)
-        #cv.SetZero(color_mask)
-
-        #min_color_purple = (0, 0, 0)
-        #max_color_purple = (255, 1, 1)
-        #cv.InRangeS(symbol, cv.Scalar(*min_color_purple), cv.Scalar(*max_color_purple), color_mask)
-        #purples = cv.CountNonZero(color_mask)
-
-        #print reds, greens, purples
-        #print "Std. Dev.:",numpy.std([reds, greens, purples])
-        #cv.ShowImage("mask", color_mask)
-        #cv.WaitKey(0)
-
-        # Here's a bad way to do this: red and green are always clear.
-        # If it is clearly either red or green, call it as such. Otherwise, call it purple.
-        ## print reds, greens, purples
-        ## m = max(reds, greens, purples)
-        ## if reds == m:
-        ##     color = "red"
-        ## elif greens == m:
-        ##     color = "green"
-        ## else:
-        ##     color = "purple
-            
 
         # Get color
 
