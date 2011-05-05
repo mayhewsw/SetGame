@@ -14,7 +14,7 @@ import cv
 
 
 # create capture device
-device = 1 # assume we want first device
+device = 0 # assume we want first device
 capture = cv.CreateCameraCapture(device)
 #cv.SetCaptureProperty(capture, cv.CAP_PROP_FRAME_WIDTH, 640)
 #cv.SetCaptureProperty(capture, cv.CAP_PROP_FRAME_HEIGHT, 480)    
@@ -34,3 +34,5 @@ while 1:
     if frame is None:
         print "nothing found..."
         break
+    cv.ShowImage("webcam", frame)
+    cv.WaitKey(0)
