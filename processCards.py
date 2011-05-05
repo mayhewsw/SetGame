@@ -63,6 +63,8 @@ def getMeaningFromCards(groups, image):
     
         # g is the group of all symbols on the cards
         number = len(g)
+
+
         
         # Get color - red, green, purple
         color = "undefined"
@@ -71,16 +73,14 @@ def getMeaningFromCards(groups, image):
         cv.SetZero(ones)
         cv.Not(ones, ones)
 
-
-        # Specify the minimum / maximum colors to look for:
-        # Find the pixels within the color-range, and put the output in the color_mask
+        # mask out the background
         min_color_red = (140, 140, 140)
         max_color_red = (255, 255, 255)
         cv.InRangeS(symbol, cv.Scalar(*min_color_red), cv.Scalar(*max_color_red), color_mask)
         reds = cv.CountNonZero(color_mask)
         cv.ShowImage('color', color_mask)
 
-        cv.Not(color_mask, color_mask)
+        #cv.Not(color_mask, color_mask)
         
         
         cv.ShowImage('ones', ones)
