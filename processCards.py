@@ -14,18 +14,23 @@ import cv
 
 def getMeaningFromCards(groups, image):
     """
-    This takes a dictionary of the form:
-         (x, y) : Card image
-    and returns a dictionary of the form (note the alphabetical order of the characteristics):
-         (x, y) : (color, fill, number, shape)
+    groups is a list of lists. The internal lists each represent
+    1 card, and have length of 1, 2 or 3, depending on the number
+    of symbols on the card. Each element in an internal list is
+    a tuple which is the bounding box of the symbol on the card.
 
-    (x, y) are the coordinates of the top left of the card
+    extractCards() returns a list of the desired type. It is likely
+    that groups is the result of extractCards().
+
     """
-    print len(groups)
+    
     for g in groups:
+
+        # Since all the symbols on any card are the same,
+        # we will only concern ourselves with the first one
+        firstSymbol = g[0]
         
-        print g[0]
-        symbol = cv.GetSubRect(image, g[0])
+        symbol = cv.GetSubRect(image, firstSymbol)
         gray = cv.CreateImage((symbol.width, symbol.height), 8, 1)
         cv.CvtColor(symbol, gray, cv.CV_BGR2GRAY)
     
@@ -160,13 +165,14 @@ def getMeaningFromCards(groups, image):
         r,gr,b,total = 0,0,0,0
         cv.Erode(gray, gray, None, 3)
         cv.Dilate(gray, gray, None, 3)
-        for i in range(g[0][1], g[0][1] + g[0][3]):
-            pixel = cv.Get2D(image, i, g[0][0] + g[0][2]/2)
+        for i in range(firstSymbol[1], firstSymbol[1] + firstSymbol[3]):
+            pixel = cv.Get2D(image, i, firstSymbol[0] + firstSymbol[2]/2)
             r += pixel[2]
             gr += pixel[1]
             b += pixel[0]
 
         # The hard numbers below are found by experimentation
+        # Have a softer method of grouping numbers?
         total = r + gr + b
         if total < 10000:
             fill = "solid"
@@ -195,9 +201,11 @@ def getMeaningFromCards(groups, image):
         #cv.WaitKey(0)
 
 
-# Given a list of bounding boxes, with many duplicates, or boxes close to each other, 
-# find one box that represents each group
+
 def findDistinctBoxes(boundingboxes):
+    """ Given a list of bounding boxes, with many duplicates, or boxes close to each other, 
+    find one box that represents each group """
+    
     # First, find distinct boundboxes. Would be better to sort them, and find the max...
     distbb = []
     nb = 75
@@ -223,11 +231,11 @@ def extractCards(image):
     """
     Given an image, this will extract the cards from it.
 
-    This takes a filename as an optional argument
-    This filename should be the name of an image file.
+    This returns a list of lists. The internal lists each represent
+    1 card, and have length of 1, 2 or 3, depending on the number
+    of symbols on the card. Each element in an internal list is
+    a tuple which is the bounding box of the symbol on the card.
 
-    This returns a dictionary of the form:
-        (x, y) : Card image
     It is likely that the output from this will go to the
     getMeaningFromCards() function.
     """
@@ -312,18 +320,28 @@ def extractCards(image):
 
 def groupBoxes(boxes, image):
     """ this takes a list of lots of boxes, and returns a list of boxes that has grouped
-    all similar boxes together  """
+    all similar boxes together
+    For example: a card with three symbols on it will be represented by a list with 3 tuples in it.
+    Each tuple refers to the bounding box of a symbol on the card. 
+    """
         
     # sort the list first by x, then by y
     # WARNING: could be fragile
     rowHeight = image.height/4
 
-    topRow = filter(lambda b: b[1] < rowHeight, boxes)
-    topmiddleRow = filter(lambda b: rowHeight < b[1] < rowHeight*2, boxes)
-    bottommiddleRow = filter(lambda b: rowHeight*2 < b[1] < rowHeight*3, boxes)
-    bottomRow = filter(lambda b: rowHeight*3 < b[1], boxes)
+    # Since the symbols are identified by their top left corners, we can afford to push
+    # rowHeight up (make it smaller), so that we avoid catching the wrong boxes
+    offset = image.height/16
 
-    print len(topRow), len(topmiddleRow, len(bottommiddleRow), len(bottomRow)
+    # For testing: draws differentiation lines on the image +++++++++++++++++++++++++++++++++++++
+    #for i in range(4):
+        #cv.Line(image, (0, rowHeight*i-offset), (image.width-4, rowHeight*i-offset), (255,0,0,0))
+    # ++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+
+    topRow = filter(lambda b: b[1] < rowHeight-offset, boxes)
+    topmiddleRow = filter(lambda b: rowHeight-offset < b[1] < rowHeight*2-offset, boxes)
+    bottommiddleRow = filter(lambda b: rowHeight*2-offset < b[1] < rowHeight*3-offset, boxes)
+    bottomRow = filter(lambda b: rowHeight*3-offset < b[1], boxes)
     
     rows = [topRow, topmiddleRow, bottommiddleRow, bottomRow]
 
@@ -358,7 +376,7 @@ def groupBoxes(boxes, image):
     groupsOfCards.append(currentGroup)
 
 
-    # entirely for testing +++++
+    # Testing: this will show each group of boxes as it is recognized +++++
     for g in groupsOfCards:
         for b in g:
             x = b[0]
@@ -368,14 +386,15 @@ def groupBoxes(boxes, image):
         
             cv.Rectangle(image, (x,y), (x+width, y+height), (0,255,0,0))
 
-        cv.ShowImage('img', image)
-        cv.WaitKey(0)
-    # ++++++++++++++++++++++++++++++
+        #cv.ShowImage('img', image)
+        #cv.WaitKey(0)
+    # +++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 
     # Give a warning for normal gameplay
-    # (thre are 12 cards)
+    # (should be 12 cards)
     if len(groupsOfCards) != 12:
         print "Warning: groupboxes has detected " + str(len(groupsOfCards)) + " cards."
+
     return groupsOfCards
         
 
@@ -427,7 +446,7 @@ if __name__ == '__main__':
     #    image = cv.LoadImage(name)
     #    cards[(0,i)] = image
 
-    image = cv.LoadImage("images/lamp1_rotate.jpg")
+    image = cv.LoadImage("images/lamp1.jpg")
     groups = extractCards(image)
     getMeaningFromCards(groups, image)
 
