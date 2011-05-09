@@ -245,12 +245,6 @@ def getMeaningFromCards(groups, image):
     
         # ++++++++++++++++++++++++++++++++++++++++++++++++
 
-    
-        # not sure why these lines are here.
-        # Anyone know? Speak now or forever hold your peace.
-        cv.Erode(gray, gray, None, 3)
-        cv.Dilate(gray, gray, None, 3)
-
         # Get fill <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
         intensityDiff = intensityDiffs[count]
 
