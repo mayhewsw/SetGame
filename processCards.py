@@ -22,12 +22,18 @@ def getMeaningFromCards(groups, image):
     extractCards() returns a list of the desired type. It is likely
     that groups is the result of extractCards().
 
+    For reference: my convention is that <<<<<<< opens a block, and
+    >>>>>>>>>>>>>> closes a block. This is supposed to help with
+    readability.
+
     """
     
     for g in groups:
 
         # Since all the symbols on any card are the same,
         # we will only concern ourselves with the first one
+        # (we might consider looking at all symbols to get a more
+        # accurate reading)
         firstSymbol = g[0]
         
         symbol = cv.GetSubRect(image, firstSymbol)
@@ -42,7 +48,6 @@ def getMeaningFromCards(groups, image):
         #cv.Not(gray,gray)
 
         # Or this ...........
-        cpy1 = cv.CloneImage(gray)
         cv.Canny(gray, gray, 50,100)
         
         #cv.Erode(gray, gray)
@@ -50,31 +55,26 @@ def getMeaningFromCards(groups, image):
         #cv.Dilate(gray, gray)
         # .......................
 
-    
-        #cv.ShowImage("symbol", symbol)
-        #cv.ShowImage("img", gray)
-        #cv.WaitKey(0)
 
+        # Find contours (what we really want is the perimeter <<<<<<<<<<<<<<<<<<<<<<
         cpy = cv.CloneImage(gray)
         storage = cv.CreateMemStorage (0)
         contours = cv.FindContours( cpy, storage, cv.CV_RETR_LIST, cv.CV_CHAIN_APPROX_SIMPLE, (0,0) )
-
-        #print cv.ContourArea(contours)
-        #print symbol.width*symbol.height
-        #print abs(cv.ContourArea(contours) - symbol.width*symbol.height)
 
         # Ignore contours that are just outlines of the image
         while( abs(cv.ContourArea(contours) - symbol.width*symbol.height) < 15):
             contours = contours.h_next()
 
         perimeter = cv.ArcLength(contours, isClosed=1)
+        # Got perimeter >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
 
     
-        # Get number ---------------------------------------
+        # Get number <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
         number = len(g)
-        # Got number --------------------------------------
+        # Got number >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
+
         
-        # Get color - red, green, purple ------------------
+        # Get color - red, green, purple <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
         color = "undefined"
 
         # color mask is a binary image
@@ -140,7 +140,8 @@ def getMeaningFromCards(groups, image):
         else:
             color = "purple"
 
-        # Got color -------------------------------------------------------------------------
+        # Got color >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
+
             
         # For testing ++++++++++++++++++++++++++++++++
         #cv.ShowImage('rchan', rchannel)
@@ -157,21 +158,22 @@ def getMeaningFromCards(groups, image):
         #cv.MoveWindow("gchan", 120, 200)
         #cv.MoveWindow("bchan", 170, 200)
         #cv.MoveWindow("color", 220, 200)
-    
-        # ++++++++++++++++++++++++++++++++++++++++++++++++
 
-        
         # Draw rects
         ##cv.Rectangle(symbol, (rect1[0], rect1[1]), ( rect1[0] + rect1[2], rect1[1] + rect1[3]), (255,0,0,0))
         #cv.Rectangle(symbol, (rect2[0], rect2[1]), ( rect2[0] + rect2[2], rect2[1] + rect2[3]), (255,0,0,0))
         #cv.Rectangle(symbol, (rect3[0], rect3[1]), ( rect3[0] + rect3[2], rect3[1] + rect3[3]), (255,0,0,0))
+    
+        # ++++++++++++++++++++++++++++++++++++++++++++++++
 
+    
         # not sure why these lines are here.
         # Anyone know? Speak now or forever hold your peace.
         cv.Erode(gray, gray, None, 3)
         cv.Dilate(gray, gray, None, 3)
 
-        # Get fill - empty, full, shaded -------------------------------------------
+
+        # Get fill - empty, full, shaded <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
         r,gr,b,total = 0,0,0,0
 
         # Loop over pixels in symbol from top to bottom
@@ -192,13 +194,13 @@ def getMeaningFromCards(groups, image):
             fill = "striped"
         else:
             fill = "empty"
-        # Got fill ------------------------------------------------------------------
+        # Got fill >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
 
         print "Fill total:",total
         print "Maybe use this:",reds[0] +greens[0] +blues[0]
 
         
-        # Get shape - oval, diamond, squiggly ----------------------------------------
+        # Get shape - oval, diamond, squiggly <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
         ratio = (symbol.width*symbol.height)/perimeter
         if ratio < 16.5:
             shape = "diamond"
@@ -206,7 +208,7 @@ def getMeaningFromCards(groups, image):
             shape = "squiggle"
         else:
             shape = "oval"
-        # Got shape -----------------------------------------------------------------
+        # Got shape >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
 
         if number > 1: shape += "s"
         print number, fill, color, shape
