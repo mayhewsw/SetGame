@@ -322,6 +322,8 @@ def groupBoxes(boxes, image):
     topmiddleRow = filter(lambda b: rowHeight < b[1] < rowHeight*2, boxes)
     bottommiddleRow = filter(lambda b: rowHeight*2 < b[1] < rowHeight*3, boxes)
     bottomRow = filter(lambda b: rowHeight*3 < b[1], boxes)
+
+    print len(topRow), len(topmiddleRow, len(bottommiddleRow), len(bottomRow)
     
     rows = [topRow, topmiddleRow, bottommiddleRow, bottomRow]
 
