@@ -23,7 +23,8 @@ def getMeaningFromCards(groups, image):
     """
     for g in groups:
         ## card = cards[k]
-        
+
+        print g[0]
         symbol = cv.GetSubRect(image, g[0])
         gray = cv.CreateImage((symbol.width, symbol.height), 8, 1)
         cv.CvtColor(symbol, gray, cv.CV_BGR2GRAY)
@@ -284,10 +285,13 @@ def extractCards(image):
 
                 # Inflate the rectangles slightly
                 amount = 5
-                b = (b[0] - amount,
-                     b[1] - amount,
-                     b[2] + 2*amount,
-                     b[3] + 2*amount)
+                b0 = b[0] - amount if b[0] >= amount else b[0]
+                b1 = b[1] #- amount if b[1] >= amount else 0
+                b2 = b[2] + 2*amount if b[2] < 2*amount+image.width else b[2]
+                b3 = b[3] + 2*amount if b[2] < 2*amount+image.height else b[3]
+
+                b = (b0, b1, b2, b3)
+                
                 
                 bboxes.append(b)
                 
@@ -412,7 +416,7 @@ if __name__ == '__main__':
     #    image = cv.LoadImage(name)
     #    cards[(0,i)] = image
 
-    image = cv.LoadImage("images/lamp1.jpg")
+    image = cv.LoadImage("images/pseye1.jpg")
     groups = extractCards(image)
     getMeaningFromCards(groups, image)
 
