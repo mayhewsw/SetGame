@@ -62,18 +62,19 @@ def getMeaningFromCards(groups, image):
         #print cv.ContourArea(contours)
         #print symbol.width*symbol.height
         #print abs(cv.ContourArea(contours) - symbol.width*symbol.height)
-        
+
+        # Ignore contours that are just outlines of the image
         while( abs(cv.ContourArea(contours) - symbol.width*symbol.height) < 15):
             contours = contours.h_next()
 
         perimeter = cv.ArcLength(contours, isClosed=1)
+
     
-        # g is the group of all symbols on the cards
+        # Get number ---------------------------------------
         number = len(g)
-
-
+        # Got number --------------------------------------
         
-        # Get color - red, green, purple
+        # Get color - red, green, purple ------------------
         color = "undefined"
 
         # color mask is a binary image
@@ -91,23 +92,23 @@ def getMeaningFromCards(groups, image):
         # Those pixels will go to black, so invert the image
         cv.Not(color_mask, color_mask)
 
-        
+    
         #cv.ShowImage('color', color_mask)        
 
-
         #Convert to HSV first, increase saturation, and convert back
-        hsvimg = cv.CreateImage((symbol.width, symbol.height), 8, 3)
-        cv.CvtColor(symbol, hsvimg, cv.CV_BGR2HSV)
+        saturatedImage = cv.CreateImage((symbol.width, symbol.height), 8, 3)
+        cv.CvtColor(symbol, saturatedImage, cv.CV_BGR2HSV)
 
         saturationShift = 200 # this is huge. It makes the images somewhat ridiculous, but it may be useful.
-        for i in range(hsvimg.width):
-            for j in range(hsvimg.height):                
-                p = cv.Get2D(hsvimg, j, i)
+        for i in range(saturatedImage.width):
+            for j in range(saturatedImage.height):                
+                p = cv.Get2D(saturatedImage, j, i)
                 p = (p[0], p[1] + saturationShift, p[2])
-                cv.Set2D(hsvimg, j, i, p)
+                cv.Set2D(saturatedImage, j, i, p)
 
         # Convert the HSV img back to BGR
-        cv.CvtColor(hsvimg, symbol, cv.CV_HSV2BGR)
+        cv.CvtColor(saturatedImage, saturatedImage, cv.CV_HSV2BGR)
+        #cv.CvtColor(saturatedImg, symbol, cv.CV_HSV2BGR)
 
         # Just want a black image
         zeros = cv.CreateImage(cv.GetSize(symbol), 8, 3)
@@ -115,14 +116,14 @@ def getMeaningFromCards(groups, image):
 
         # Copy the symbol over to zeros, with color_mask as the mask
         # This effectively copies only the symbol over.
-        cv.Copy(symbol, zeros, color_mask)
-        symbol = zeros
+        cv.Copy(saturatedImage, zeros, color_mask)
+        saturatedImage = zeros
 
         # Split it into RGB channels
-        rchannel = cv.CreateImage((symbol.width, symbol.height), 8, 1)
-        gchannel = cv.CreateImage((symbol.width, symbol.height), 8, 1)
-        bchannel = cv.CreateImage((symbol.width, symbol.height), 8, 1)
-        cv.Split(symbol,bchannel,gchannel,rchannel,None)
+        rchannel = cv.CreateImage((saturatedImage.width, saturatedImage.height), 8, 1)
+        gchannel = cv.CreateImage((saturatedImage.width, saturatedImage.height), 8, 1)
+        bchannel = cv.CreateImage((saturatedImage.width, saturatedImage.height), 8, 1)
+        cv.Split(saturatedImage,bchannel,gchannel,rchannel,None)
 
         # The result of cv.Sum() is a tuple. We want the first value
         reds = cv.Sum(rchannel)
@@ -139,13 +140,17 @@ def getMeaningFromCards(groups, image):
         else:
             color = "purple"
 
+        # Got color -------------------------------------------------------------------------
+            
         # For testing ++++++++++++++++++++++++++++++++
         #cv.ShowImage('rchan', rchannel)
         #cv.ShowImage('gchan', gchannel)
         #cv.ShowImage('bchan', bchannel)
 
-                     
-        cv.ShowImage("symbol", image)
+        
+        cv.ShowImage("gray", gray)
+        cv.ShowImage("symbol", symbol)
+        #cv.ShowImage("image", image)
 
         #cv.MoveWindow("symbol", 20, 200)
         #cv.MoveWindow("rchan", 70, 200)
@@ -161,12 +166,19 @@ def getMeaningFromCards(groups, image):
         #cv.Rectangle(symbol, (rect2[0], rect2[1]), ( rect2[0] + rect2[2], rect2[1] + rect2[3]), (255,0,0,0))
         #cv.Rectangle(symbol, (rect3[0], rect3[1]), ( rect3[0] + rect3[2], rect3[1] + rect3[3]), (255,0,0,0))
 
-        # Get fill - empty, full, shaded
-        r,gr,b,total = 0,0,0,0
+        # not sure why these lines are here.
+        # Anyone know? Speak now or forever hold your peace.
         cv.Erode(gray, gray, None, 3)
         cv.Dilate(gray, gray, None, 3)
-        for i in range(firstSymbol[1], firstSymbol[1] + firstSymbol[3]):
-            pixel = cv.Get2D(image, i, firstSymbol[0] + firstSymbol[2]/2)
+
+        # Get fill - empty, full, shaded -------------------------------------------
+        r,gr,b,total = 0,0,0,0
+
+        # Loop over pixels in symbol from top to bottom
+        # In the middle
+        for row in range(firstSymbol[1], firstSymbol[1] + firstSymbol[3]):
+            col = firstSymbol[0] + firstSymbol[2]/2
+            pixel = cv.Get2D(image, row, col)
             r += pixel[2]
             gr += pixel[1]
             b += pixel[0]
@@ -180,11 +192,13 @@ def getMeaningFromCards(groups, image):
             fill = "striped"
         else:
             fill = "empty"
+        # Got fill ------------------------------------------------------------------
 
         print "Fill total:",total
+        print "Maybe use this:",reds[0] +greens[0] +blues[0]
 
         
-        # Get shape - oval, diamond, squiggly
+        # Get shape - oval, diamond, squiggly ----------------------------------------
         ratio = (symbol.width*symbol.height)/perimeter
         if ratio < 16.5:
             shape = "diamond"
@@ -192,13 +206,15 @@ def getMeaningFromCards(groups, image):
             shape = "squiggle"
         else:
             shape = "oval"
+        # Got shape -----------------------------------------------------------------
 
         if number > 1: shape += "s"
         print number, fill, color, shape
+        print
         #symbols[k] = (color, fill, number, shape)
         #cv.ShowImage("img", symbol)
-        #cv.WaitKey(0)
-        #cv.WaitKey(0)
+        cv.WaitKey(0)
+        
 
 
 
@@ -384,7 +400,7 @@ def groupBoxes(boxes, image):
             width = b[2]
             height = b[3]
         
-            cv.Rectangle(image, (x,y), (x+width, y+height), (0,255,0,0))
+            #cv.Rectangle(image, (x,y), (x+width, y+height), (0,255,0,0))
 
         #cv.ShowImage('img', image)
         #cv.WaitKey(0)
