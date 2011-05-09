@@ -27,6 +27,78 @@ def getMeaningFromCards(groups, image):
     readability.
 
     """
+
+    # This loop is just for getting information on fill before we do the second (main) loop.
+    intensityDiffs = []
+    for g in groups:
+        firstSymbol = g[0]
+        # Get fill - empty, full, shaded <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
+        total, totalOutside = 0,0
+
+        grayImg = cv.CreateImage((image.width, image.height), 8, 1)
+        cv.CvtColor(image, grayImg, cv.CV_BGR2GRAY)
+        
+        #cv.AdaptiveThreshold(grayImg,grayImg,20, blockSize=11)
+        #cv.Threshold(grayImg, grayImg, 170, 255, cv.CV_THRESH_BINARY)
+        
+        # This adds contrast to the image
+        cv.EqualizeHist(grayImg, grayImg)
+        
+        #cv.Line(grayImg, (firstSymbol[0] + firstSymbol[2]/2, firstSymbol[1]), (firstSymbol[0] + firstSymbol[2]/2, firstSymbol[1] + firstSymbol[3]), (0,0,255,0))
+
+        #cv.Line(grayImg, (firstSymbol[0]-3, firstSymbol[1]), (firstSymbol[0]-3, firstSymbol[1] + firstSymbol[3]), (0,0,255,0))
+        
+        cv.ShowImage("gimg", grayImg)
+        
+        # Go this much to the left of the left side of the bounding box
+        # to sample a line in contrast with the center of the symbol
+        leftOfBoundingBox = 3
+        
+        # Loop over pixels in grayscale image from top to bottom of symbol
+        # in the middle. Also, just to the left
+        for row in range(firstSymbol[1], firstSymbol[1] + firstSymbol[3]):
+            col = firstSymbol[0] + firstSymbol[2]/2
+            colOutside = firstSymbol[0] - leftOfBoundingBox # should be enough to get us outside the symbol
+
+            pixelSymbol = cv.Get2D(grayImg, row, col)
+            pixelOutside = cv.Get2D(grayImg, row, colOutside)
+
+            total += pixelSymbol[0]
+            totalOutside += pixelOutside[0]
+
+        intensityDifference = abs(total - totalOutside)
+
+        print "Difference: ", intensityDifference
+        # Got fill >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
+        intensityDiffs.append(intensityDifference)
+
+    # Make intensity thresholds based off these values
+    intensityDiffs = sorted(intensityDiffs)
+    print intensityDiffs
+
+    # Find the largest jumps in the diffs list
+    # thos jumps represent different levels.
+    jumps = []
+    for i in range(len(intensityDiffs)-1):
+        jump = abs(intensityDiffs[i] - intensityDiffs[i+1])
+        print "Jump", i, i+1, jump
+        jumps.append((jump, i))
+
+    # With tuples, sorted sorts by the first element anyway.
+    # We want the largest elements at the beginning, so we reverse
+    jumps = sorted(jumps, reverse=True)
+    thresh1 = jumps[0][1] # largest jump
+    thresh2 = jumps[1][1] # second largest jump
+
+    # Set the thresholds to be in between the positions of the
+    # largest jumps.
+    thresh1 = intensityDiffs[thresh1] + jumps[thresh1][0]/2
+    thresh2 = intensityDiffs[thresh2] + jumps[thresh2][0]/2
+
+    # We will need this for later
+    bottomThresh = min(thresh1, thresh2) 
+    bottomThresh = max(thresh1, thresh2)
+
     
     for g in groups:
 
@@ -173,32 +245,8 @@ def getMeaningFromCards(groups, image):
         cv.Dilate(gray, gray, None, 3)
 
 
-        # Get fill - empty, full, shaded <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
-        r,gr,b,total = 0,0,0,0
-
-        # Loop over pixels in symbol from top to bottom
-        # In the middle
-        for row in range(firstSymbol[1], firstSymbol[1] + firstSymbol[3]):
-            col = firstSymbol[0] + firstSymbol[2]/2
-            pixel = cv.Get2D(image, row, col)
-            r += pixel[2]
-            gr += pixel[1]
-            b += pixel[0]
-
-        # The hard numbers below are found by experimentation
-        # Have a softer method of grouping numbers?
-        total = r + gr + b
-        if total < 10000:
-            fill = "solid"
-        elif total < 30000:
-            fill = "striped"
-        else:
-            fill = "empty"
-        # Got fill >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
-
-        print "Fill total:",total
-        print "Maybe use this:",reds[0] +greens[0] +blues[0]
-
+        
+        
         
         # Get shape - oval, diamond, squiggly <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
         ratio = (symbol.width*symbol.height)/perimeter
@@ -209,6 +257,7 @@ def getMeaningFromCards(groups, image):
         else:
             shape = "oval"
         # Got shape >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
+
 
         if number > 1: shape += "s"
         print number, fill, color, shape
