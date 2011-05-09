@@ -64,8 +64,9 @@ def getMeaningFromCards(groups, image):
     # This loop is just for getting information on fill before we do the second (main) loop.
     intensityDiffs = []
     for g in groups:
+
         firstSymbol = g[0]
-        # Get fill - empty, full, shaded <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
+        
         total, totalOutside = 0,0
 
         grayImg = cv.CreateImage((image.width, image.height), 8, 1)
@@ -73,12 +74,14 @@ def getMeaningFromCards(groups, image):
      
         # This adds contrast to the image
         cv.EqualizeHist(grayImg, grayImg)
-        
+
+        # Testing ++++++++++++++++++++++++++++++
         #cv.Line(grayImg, (firstSymbol[0] + firstSymbol[2]/2, firstSymbol[1]), (firstSymbol[0] + firstSymbol[2]/2, firstSymbol[1] + firstSymbol[3]), (0,0,255,0))
 
         #cv.Line(grayImg, (firstSymbol[0]-3, firstSymbol[1]), (firstSymbol[0]-3, firstSymbol[1] + firstSymbol[3]), (0,0,255,0))
         
         cv.ShowImage("gimg", grayImg)
+        # +++++++++++++++++++++++++++++++++++++
         
         # Go this much to the left of the left side of the bounding box
         # to sample a line in contrast with the center of the symbol
@@ -96,14 +99,12 @@ def getMeaningFromCards(groups, image):
             total += pixelSymbol[0]
             totalOutside += pixelOutside[0]
 
-        intensityDifference = abs(total - totalOutside)
-
-        print "Difference: ", intensityDifference
-        # Got fill >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
+        intensityDifference = abs(total - totalOutside)    
         intensityDiffs.append(intensityDifference)
 
+    # Get fill section uses these
+    # intensityDiffs (unsorted) is also used in the Get fill section
     bottomThresh, topThresh = getThresholdsFromList(intensityDiffs)
-
     count = 0
 
     # This is the main loop
@@ -114,11 +115,12 @@ def getMeaningFromCards(groups, image):
         # (we might consider looking at all symbols to get a more
         # accurate reading)
         firstSymbol = g[0]
-        
+
+        # Extract just the portion of the image that is the symbol
+        # Also create a grayscale version and smooth it
         symbol = cv.GetSubRect(image, firstSymbol)
         gray = cv.CreateImage((symbol.width, symbol.height), 8, 1)
         cv.CvtColor(symbol, gray, cv.CV_BGR2GRAY)
-    
         cv.Smooth(gray, gray)
         
         # Either this..........
@@ -135,16 +137,19 @@ def getMeaningFromCards(groups, image):
         # .......................
 
 
-        # Find contours (what we really want is the perimeter <<<<<<<<<<<<<<<<<<<<<<
-        cpy = cv.CloneImage(gray)
-        storage = cv.CreateMemStorage (0)
-        contours = cv.FindContours( cpy, storage, cv.CV_RETR_LIST, cv.CV_CHAIN_APPROX_SIMPLE, (0,0) )
+        # Find contours (what we really want is the perimeter) <<<<<<<<<<<<<<<<<<<<<<
+        ## cpy = cv.CloneImage(gray)
+        ## storage = cv.CreateMemStorage (0)
+        ## contours = cv.FindContours( cpy, storage, cv.CV_RETR_LIST, cv.CV_CHAIN_APPROX_SIMPLE, (0,0) )
 
-        # Ignore contours that are just outlines of the image
-        while( abs(cv.ContourArea(contours) - symbol.width*symbol.height) < 15):
-            contours = contours.h_next()
+        ## #cv.ShowImage("cpy",cpy)
+        ## #cv.WaitKey(0)
 
-        perimeter = cv.ArcLength(contours, isClosed=1)
+        ## # Ignore contours that are just outlines of the image
+        ## while( abs(cv.ContourArea(contours) - symbol.width*symbol.height) < 15):
+        ##     contours = contours.h_next()
+
+        ## perimeter = cv.ArcLength(contours, isClosed=1)
         # Got perimeter >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
 
     
@@ -228,9 +233,9 @@ def getMeaningFromCards(groups, image):
         #cv.ShowImage('bchan', bchannel)
 
         
-        cv.ShowImage("gray", gray)
-        cv.ShowImage("symbol", symbol)
-        #cv.ShowImage("image", image)
+        #cv.ShowImage("gray", gray)
+        #cv.ShowImage("symbol", symbol)
+        cv.ShowImage("image", image)
 
         #cv.MoveWindow("symbol", 20, 200)
         #cv.MoveWindow("rchan", 70, 200)
@@ -259,10 +264,36 @@ def getMeaningFromCards(groups, image):
         count += 1
         # Got fill >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
         
-        
-        
+
         # Get shape - oval, diamond, squiggly <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
-        ratio = (symbol.width*symbol.height)/perimeter
+        cv.Dilate(gray, gray)
+        cpy = cv.CloneImage(gray)
+        storage = cv.CreateMemStorage (0)
+        contours = cv.FindContours( cpy, storage)
+
+
+
+        
+        perimeter = cv.ArcLength(contours, isClosed=1)
+
+        # Ignore contours that are just outlines of the image
+        while( abs(cv.ContourArea(contours) - symbol.width*symbol.height) < 15 or
+               perimeter < 60):
+            contours = contours.h_next()
+            perimeter = cv.ArcLength(contours, isClosed=1)
+
+        contourRect = cv.BoundingRect(contours)
+        cv.DrawContours(cpy,contours,(0,255,0,0),(255,0,0,0),1)
+
+
+        cv.ShowImage("gray", gray)
+        cv.ShowImage("cpy",cpy)
+
+        cRectArea = contourRect[2]*contourRect[3]
+        ratio = cRectArea/perimeter
+        print cRectArea
+        print "Perimeter: ", perimeter
+        print "Ratio: ", ratio
         if ratio < 16.5:
             shape = "diamond"
         elif ratio < 20:
@@ -528,7 +559,7 @@ if __name__ == '__main__':
     #    image = cv.LoadImage(name)
     #    cards[(0,i)] = image
 
-    image = cv.LoadImage("images/lamp1.jpg")
+    image = cv.LoadImage("images/lamp1_rotate.jpg")
     groups = extractCards(image)
     getMeaningFromCards(groups, image)
 
