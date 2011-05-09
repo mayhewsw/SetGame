@@ -12,6 +12,39 @@ import cv
 #import random
 #import numpy
 
+def getThresholdsFromList(l):
+    """ Given a list of numbers, this finds 3 different levels
+    and computes the 2 thresholds between those levels
+
+    Returns: bottomThresh, topThresh """
+    
+    # Make intensity thresholds based off these values
+    l = sorted(l)
+
+    # Find the largest jumps in the diffs list
+    # thos jumps represent different levels.
+    jumps = []
+    for i in range(len(l)-1):
+        jump = abs(l[i] - l[i+1])
+        jumps.append((jump, i))
+
+    # With tuples, sorted sorts by the first element anyway.
+    # We want the largest elements at the beginning, so we reverse
+    jumps = sorted(jumps, reverse=True)
+    thresh1 = jumps[0][1] # largest jump
+    thresh2 = jumps[1][1] # second largest jump
+
+    # Set the thresholds to be in between the positions of the
+    # largest jumps.
+    thresh1 = l[thresh1] + jumps[thresh1][0]/2
+    thresh2 = l[thresh2] + jumps[thresh2][0]/2
+
+    # We will need this for later
+    bottomThresh = min(thresh1, thresh2) 
+    topThresh = max(thresh1, thresh2)
+    return bottomThresh, topThresh
+
+
 def getMeaningFromCards(groups, image):
     """
     groups is a list of lists. The internal lists each represent
@@ -37,10 +70,7 @@ def getMeaningFromCards(groups, image):
 
         grayImg = cv.CreateImage((image.width, image.height), 8, 1)
         cv.CvtColor(image, grayImg, cv.CV_BGR2GRAY)
-        
-        #cv.AdaptiveThreshold(grayImg,grayImg,20, blockSize=11)
-        #cv.Threshold(grayImg, grayImg, 170, 255, cv.CV_THRESH_BINARY)
-        
+     
         # This adds contrast to the image
         cv.EqualizeHist(grayImg, grayImg)
         
@@ -72,34 +102,11 @@ def getMeaningFromCards(groups, image):
         # Got fill >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
         intensityDiffs.append(intensityDifference)
 
-    # Make intensity thresholds based off these values
-    intensityDiffs = sorted(intensityDiffs)
-    print intensityDiffs
+    bottomThresh, topThresh = getThresholdsFromList(intensityDiffs)
 
-    # Find the largest jumps in the diffs list
-    # thos jumps represent different levels.
-    jumps = []
-    for i in range(len(intensityDiffs)-1):
-        jump = abs(intensityDiffs[i] - intensityDiffs[i+1])
-        print "Jump", i, i+1, jump
-        jumps.append((jump, i))
+    count = 0
 
-    # With tuples, sorted sorts by the first element anyway.
-    # We want the largest elements at the beginning, so we reverse
-    jumps = sorted(jumps, reverse=True)
-    thresh1 = jumps[0][1] # largest jump
-    thresh2 = jumps[1][1] # second largest jump
-
-    # Set the thresholds to be in between the positions of the
-    # largest jumps.
-    thresh1 = intensityDiffs[thresh1] + jumps[thresh1][0]/2
-    thresh2 = intensityDiffs[thresh2] + jumps[thresh2][0]/2
-
-    # We will need this for later
-    bottomThresh = min(thresh1, thresh2) 
-    bottomThresh = max(thresh1, thresh2)
-
-    
+    # This is the main loop
     for g in groups:
 
         # Since all the symbols on any card are the same,
@@ -244,7 +251,19 @@ def getMeaningFromCards(groups, image):
         cv.Erode(gray, gray, None, 3)
         cv.Dilate(gray, gray, None, 3)
 
+        # Get fill <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
+        intensityDiff = intensityDiffs[count]
 
+        if intensityDiff <= bottomThresh:
+            fill = "empty"
+        elif bottomThresh < intensityDiff < topThresh:
+            fill = "striped"
+        else:
+            fill = "solid"
+
+        
+        count += 1
+        # Got fill >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
         
         
         
@@ -265,6 +284,8 @@ def getMeaningFromCards(groups, image):
         #symbols[k] = (color, fill, number, shape)
         #cv.ShowImage("img", symbol)
         cv.WaitKey(0)
+
+        
         
 
 
