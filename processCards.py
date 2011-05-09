@@ -21,9 +21,9 @@ def getMeaningFromCards(groups, image):
 
     (x, y) are the coordinates of the top left of the card
     """
+    print len(groups)
     for g in groups:
-        ## card = cards[k]
-
+        
         print g[0]
         symbol = cv.GetSubRect(image, g[0])
         gray = cv.CreateImage((symbol.width, symbol.height), 8, 1)
@@ -87,7 +87,7 @@ def getMeaningFromCards(groups, image):
         cv.Not(color_mask, color_mask)
 
         
-        cv.ShowImage('color', color_mask)        
+        #cv.ShowImage('color', color_mask)        
 
 
         #Convert to HSV first, increase saturation, and convert back
@@ -113,19 +113,20 @@ def getMeaningFromCards(groups, image):
         cv.Copy(symbol, zeros, color_mask)
         symbol = zeros
 
-        # Split it into channels
+        # Split it into RGB channels
         rchannel = cv.CreateImage((symbol.width, symbol.height), 8, 1)
         gchannel = cv.CreateImage((symbol.width, symbol.height), 8, 1)
         bchannel = cv.CreateImage((symbol.width, symbol.height), 8, 1)
         cv.Split(symbol,bchannel,gchannel,rchannel,None)
 
+        # The result of cv.Sum() is a tuple. We want the first value
         reds = cv.Sum(rchannel)
         greens = cv.Sum(gchannel)
         blues = cv.Sum(bchannel)
         #print reds[0], greens[0], blues[0]
 
-        m = max(reds[0], greens[0], blues[0])
-        
+        # Just a simple max of summed values
+        m = max(reds[0], greens[0], blues[0])        
         if m == reds[0]:
             color = "red"
         elif m == greens[0]:
@@ -134,18 +135,18 @@ def getMeaningFromCards(groups, image):
             color = "purple"
 
         # For testing ++++++++++++++++++++++++++++++++
-        cv.ShowImage('rchan', rchannel)
-        cv.ShowImage('gchan', gchannel)
-        cv.ShowImage('bchan', bchannel)
+        #cv.ShowImage('rchan', rchannel)
+        #cv.ShowImage('gchan', gchannel)
+        #cv.ShowImage('bchan', bchannel)
 
                      
-        cv.ShowImage("symbol", symbol)
+        cv.ShowImage("symbol", image)
 
-        cv.MoveWindow("symbol", 20, 200)
-        cv.MoveWindow("rchan", 70, 200)
-        cv.MoveWindow("gchan", 120, 200)
-        cv.MoveWindow("bchan", 170, 200)
-        cv.MoveWindow("color", 220, 200)
+        #cv.MoveWindow("symbol", 20, 200)
+        #cv.MoveWindow("rchan", 70, 200)
+        #cv.MoveWindow("gchan", 120, 200)
+        #cv.MoveWindow("bchan", 170, 200)
+        #cv.MoveWindow("color", 220, 200)
     
         # ++++++++++++++++++++++++++++++++++++++++++++++++
 
@@ -173,7 +174,9 @@ def getMeaningFromCards(groups, image):
             fill = "striped"
         else:
             fill = "empty"
-            
+
+        print "Fill total:",total
+
         
         # Get shape - oval, diamond, squiggly
         ratio = (symbol.width*symbol.height)/perimeter
@@ -188,7 +191,8 @@ def getMeaningFromCards(groups, image):
         print number, fill, color, shape
         #symbols[k] = (color, fill, number, shape)
         #cv.ShowImage("img", symbol)
-        cv.WaitKey(0)
+        #cv.WaitKey(0)
+        #cv.WaitKey(0)
 
 
 # Given a list of bounding boxes, with many duplicates, or boxes close to each other, 
@@ -307,8 +311,8 @@ def extractCards(image):
 
 
 def groupBoxes(boxes, image):
-    ''' this takes a list of lots of boxes, and returns a list of boxes that has grouped
-    all similar boxes together'''
+    """ this takes a list of lots of boxes, and returns a list of boxes that has grouped
+    all similar boxes together  """
         
     # sort the list first by x, then by y
     # WARNING: could be fragile
@@ -328,14 +332,15 @@ def groupBoxes(boxes, image):
 
     groupsOfCards = []
     currentGroup = []
-    #distance = 50 # play around with this
+
     fudge = 7
     for b in final:
         l = len(currentGroup)
         if l == 0:
             currentGroup.append(b)
         elif l == 1 or l == 2:
-            # check if x-distance (might be fragile) from last element in current group is above a certain threshold compared to b
+            # check if x-distance (might be fragile) from last element
+            # in current group is above a certain threshold compared to b
             last = currentGroup[l-1]
             # if above, append, and clear
             if abs(last[0] - b[0]) > last[2]+fudge:
@@ -359,12 +364,16 @@ def groupBoxes(boxes, image):
             width = b[2]
             height = b[3]
         
-            #cv.Rectangle(image, (x,y), (x+width, y+height), (0,255,0,0))
+            cv.Rectangle(image, (x,y), (x+width, y+height), (0,255,0,0))
 
-        #cv.ShowImage('img', image)
-        #cv.WaitKey(0)
+        cv.ShowImage('img', image)
+        cv.WaitKey(0)
     # ++++++++++++++++++++++++++++++
-                    
+
+    # Give a warning for normal gameplay
+    # (thre are 12 cards)
+    if len(groupsOfCards) != 12:
+        print "Warning: groupboxes has detected " + str(len(groupsOfCards)) + " cards."
     return groupsOfCards
         
 
@@ -416,7 +425,7 @@ if __name__ == '__main__':
     #    image = cv.LoadImage(name)
     #    cards[(0,i)] = image
 
-    image = cv.LoadImage("images/pseye1.jpg")
+    image = cv.LoadImage("images/lamp1_rotate.jpg")
     groups = extractCards(image)
     getMeaningFromCards(groups, image)
 
