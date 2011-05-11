@@ -1,16 +1,18 @@
 3# Process cards for the Set Solver game
 # Stephen Mayhew - April 23, 2011
 
-
-#import gtk.gdk
 import cv
-#import numpy
-#import time
-#import os
-#import string
-#import Image
-#import random
-#import numpy
+
+class Card:
+    """ A useful way to store both bounding box and attributes """
+
+    def __init__(self, symbols, attributes):
+        self.symbols = symbols
+        self.attributes = attributes
+
+    def __str__(self):
+        return "Card: " + str(symbols) + str( attributes)
+    
 
 def getThresholdsFromList(l):
     """ Given a list of numbers, this finds 3 different levels
@@ -44,6 +46,9 @@ def getThresholdsFromList(l):
     topThresh = max(thresh1, thresh2)
     return bottomThresh, topThresh
 
+def makeBoardImage(cards):
+    pass
+
 
 def getMeaningFromCards(groups, image):
     """
@@ -61,6 +66,14 @@ def getMeaningFromCards(groups, image):
 
     """
 
+    # For debugging. Add text to the string to catch debug flags
+    # Options are number, fill, color, shape
+    # The check is simply:
+    #     if "number" in debug: ...
+    debug = ""
+    
+    cards=[]
+
     # This loop is just for getting information on fill before we do the second (main) loop.
     intensityDiffs = []
     for g in groups:
@@ -75,17 +88,24 @@ def getMeaningFromCards(groups, image):
         # This adds contrast to the image
         cv.EqualizeHist(grayImg, grayImg)
 
-        # Testing ++++++++++++++++++++++++++++++
-        #cv.Line(grayImg, (firstSymbol[0] + firstSymbol[2]/2, firstSymbol[1]), (firstSymbol[0] + firstSymbol[2]/2, firstSymbol[1] + firstSymbol[3]), (0,0,255,0))
-
-        #cv.Line(grayImg, (firstSymbol[0]-3, firstSymbol[1]), (firstSymbol[0]-3, firstSymbol[1] + firstSymbol[3]), (0,0,255,0))
-        
-        cv.ShowImage("gimg", grayImg)
-        # +++++++++++++++++++++++++++++++++++++
-        
         # Go this much to the left of the left side of the bounding box
         # to sample a line in contrast with the center of the symbol
         leftOfBoundingBox = 3
+
+        # Testing ++++++++++++++++++++++++++++++
+        if "fill" in debug:
+            cv.Line(grayImg, (firstSymbol[0] + firstSymbol[2]/2, firstSymbol[1]),
+                    (firstSymbol[0] + firstSymbol[2]/2, firstSymbol[1] + firstSymbol[3]),
+                    (0,0,255,0))
+
+            cv.Line(grayImg, (firstSymbol[0]-leftOfBoundingBox-1, firstSymbol[1]),
+                    (firstSymbol[0]-leftOfBoundingBox-1, firstSymbol[1] + firstSymbol[3]),
+                    (0,0,255,0))
+        
+            #cv.ShowImage("gimg", grayImg)
+            #cv.WaitKey(0)
+        # +++++++++++++++++++++++++++++++++++++
+    
         
         # Loop over pixels in grayscale image from top to bottom of symbol
         # in the middle. Also, just to the left
@@ -101,6 +121,8 @@ def getMeaningFromCards(groups, image):
 
         intensityDifference = abs(total - totalOutside)    
         intensityDiffs.append(intensityDifference)
+
+
 
     # Get fill section uses these
     # intensityDiffs (unsorted) is also used in the Get fill section
@@ -136,25 +158,12 @@ def getMeaningFromCards(groups, image):
         #cv.Dilate(gray, gray)
         # .......................
 
-
-        # Find contours (what we really want is the perimeter) <<<<<<<<<<<<<<<<<<<<<<
-        ## cpy = cv.CloneImage(gray)
-        ## storage = cv.CreateMemStorage (0)
-        ## contours = cv.FindContours( cpy, storage, cv.CV_RETR_LIST, cv.CV_CHAIN_APPROX_SIMPLE, (0,0) )
-
-        ## #cv.ShowImage("cpy",cpy)
-        ## #cv.WaitKey(0)
-
-        ## # Ignore contours that are just outlines of the image
-        ## while( abs(cv.ContourArea(contours) - symbol.width*symbol.height) < 15):
-        ##     contours = contours.h_next()
-
-        ## perimeter = cv.ArcLength(contours, isClosed=1)
-        # Got perimeter >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
-
     
         # Get number <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
         number = len(g)
+        
+        if "number" in debug:
+            print "Number:", number
         # Got number >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
 
         
@@ -224,24 +233,21 @@ def getMeaningFromCards(groups, image):
         else:
             color = "purple"
 
-        # Got color >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
-
-            
         # For testing ++++++++++++++++++++++++++++++++
-        #cv.ShowImage('rchan', rchannel)
-        #cv.ShowImage('gchan', gchannel)
-        #cv.ShowImage('bchan', bchannel)
+        if "color" in debug:
+            cv.ShowImage('rchan', rchannel)
+            cv.ShowImage('gchan', gchannel)
+            cv.ShowImage('bchan', bchannel)
 
-        
-        #cv.ShowImage("gray", gray)
-        #cv.ShowImage("symbol", symbol)
-        cv.ShowImage("image", image)
+            cv.ShowImage("gray", gray)
+            cv.ShowImage("symbol", symbol)
+            cv.ShowImage("image", image)
 
-        #cv.MoveWindow("symbol", 20, 200)
-        #cv.MoveWindow("rchan", 70, 200)
-        #cv.MoveWindow("gchan", 120, 200)
-        #cv.MoveWindow("bchan", 170, 200)
-        #cv.MoveWindow("color", 220, 200)
+            cv.MoveWindow("symbol", 20, 200)
+            cv.MoveWindow("rchan", 70, 200)
+            cv.MoveWindow("gchan", 120, 200)
+            cv.MoveWindow("bchan", 170, 200)
+            cv.MoveWindow("color", 220, 200)
 
         # Draw rects
         ##cv.Rectangle(symbol, (rect1[0], rect1[1]), ( rect1[0] + rect1[2], rect1[1] + rect1[3]), (255,0,0,0))
@@ -250,9 +256,17 @@ def getMeaningFromCards(groups, image):
     
         # ++++++++++++++++++++++++++++++++++++++++++++++++
 
+        # Got color >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
+
+
         # Get fill <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
         intensityDiff = intensityDiffs[count]
 
+        if "fill" in debug:
+            print "BottomThresh:", bottomThresh
+            print "TopThresh:",topThresh
+            print "IndtensityDiff:", intensityDiff
+            
         if intensityDiff <= bottomThresh:
             fill = "empty"
         elif bottomThresh < intensityDiff < topThresh:
@@ -260,7 +274,6 @@ def getMeaningFromCards(groups, image):
         else:
             fill = "solid"
 
-        
         count += 1
         # Got fill >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
         
@@ -271,9 +284,6 @@ def getMeaningFromCards(groups, image):
         storage = cv.CreateMemStorage (0)
         contours = cv.FindContours( cpy, storage)
 
-
-
-        
         perimeter = cv.ArcLength(contours, isClosed=1)
 
         # Ignore contours that are just outlines of the image
@@ -285,15 +295,19 @@ def getMeaningFromCards(groups, image):
         contourRect = cv.BoundingRect(contours)
         cv.DrawContours(cpy,contours,(0,255,0,0),(255,0,0,0),1)
 
-
-        cv.ShowImage("gray", gray)
-        cv.ShowImage("cpy",cpy)
-
         cRectArea = contourRect[2]*contourRect[3]
         ratio = cRectArea/perimeter
-        print cRectArea
-        print "Perimeter: ", perimeter
-        print "Ratio: ", ratio
+
+        # For testing ++++++++++++++++++++++++++++++++++++
+        if "shape" in debug:
+            cv.ShowImage("gray", gray)
+            cv.ShowImage("cpy",cpy)
+            
+            print cRectArea
+            print "Perimeter: ", perimeter
+            print "Ratio: ", ratio
+        #+++++++++++++++++++++++++++++++++++++++++++++++
+
         if ratio < 16.5:
             shape = "diamond"
         elif ratio < 20:
@@ -306,11 +320,14 @@ def getMeaningFromCards(groups, image):
         if number > 1: shape += "s"
         print number, fill, color, shape
         print
+
+        cards.append(Card(g, (number, fill, color, shape)))
+
         #symbols[k] = (color, fill, number, shape)
         #cv.ShowImage("img", symbol)
-        cv.WaitKey(0)
+        #cv.WaitKey(0)
 
-        
+    #print cards
         
 
 
@@ -391,22 +408,24 @@ def extractCards(image):
     contours = cv.FindContours( cpy, storage, cv.CV_RETR_LIST, cv.CV_CHAIN_APPROX_SIMPLE, (0,0) );
     #contours = cv.ApproxPoly(contours, cv.CreateMemStorage(), cv.CV_POLY_APPROX_DP, 3, 1)
 
+    #cv.ShowImage("sub", cpy)
+    #cv.WaitKey(0)
+
     bboxes = []
 
     if contours:
         while(contours):
             area = cv.ContourArea(contours)
-            # It turns out that all the cards are about 44000 in area...
-            # It would definitely be nice to have a better way to do this:
-            # ie, find the size of the card programmatically and use it then
-            # For Set, we can statistically find the average...also use an
-            # expected value
-            storage2 = cv.CreateMemStorage (0)
-            #app = cv.ApproxPoly(contours, storage2, cv.CV_POLY_APPROX_DP, 0)
-            app = contours
+
+            # We also want the area of the contours to be relatively close to the
+            # area of the bounding boxes.
+            b = cv.BoundingRect(contours)
+            barea = b[2]*b[3]
+
             
+
+            # Only accept contours within a certain area range
             if (area > 250 and area < 5000 and area < image.width*image.height*2/3):
-                b = cv.BoundingRect(app)
 
                 # Inflate the rectangles slightly
                 amount = 5
@@ -415,18 +434,32 @@ def extractCards(image):
                 b2 = b[2] + 2*amount if b[2] < 2*amount+image.width else b[2]
                 b3 = b[3] + 2*amount if b[2] < 2*amount+image.height else b[3]
 
+                # Tuples cannot be modified, so we
+                # create a new one
                 b = (b0, b1, b2, b3)
-                
                 
                 bboxes.append(b)
                 
-            contours = contours.h_next()
+                # For testing ++++++++++++++++++++++++++++++++++++++++++++++++++++++
+                #cv.Rectangle(gray, (b[0],b[1]), (b[0]+b[2], b[1]+b[3]), (255,0,0,0))
+                #cv.ShowImage("sub", gray)
+                #cv.WaitKey(0)
+                # +++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 
+                
+            contours = contours.h_next()
 
     bboxes = findDistinctBoxes(bboxes)
 
-    #for c in bboxesS:
-    #    cv.DrawContours(image,c,(0,255,0,0) ,(255,0,0,),1)
+    areas = []
+    # Find average size of bounding boxes and remove those that are not close to the average
+    for b in bboxes:
+        areas.append(b[2]*b[3])
+    areas = sorted(areas)
+    print areas
+    avg = sum(areas)/len(areas)
+    print avg
+    # remove boxes that are very far from the average
 
     return groupBoxes(bboxes, image)
 
@@ -497,7 +530,7 @@ def groupBoxes(boxes, image):
             width = b[2]
             height = b[3]
         
-            #cv.Rectangle(image, (x,y), (x+width, y+height), (0,255,0,0))
+            cv.Rectangle(image, (x,y), (x+width, y+height), (0,255,0,0))
 
         #cv.ShowImage('img', image)
         #cv.WaitKey(0)
@@ -559,7 +592,7 @@ if __name__ == '__main__':
     #    image = cv.LoadImage(name)
     #    cards[(0,i)] = image
 
-    image = cv.LoadImage("images/lamp1_rotate.jpg")
+    image = cv.LoadImage("images/lamp2.jpg")
     groups = extractCards(image)
     getMeaningFromCards(groups, image)
 
