@@ -627,7 +627,7 @@ if __name__ == '__main__':
     #    image = cv.LoadImage(name)
     #    cards[(0,i)] = image
 
-    image = cv.LoadImage("images/lamp4.jpg")
+    image = cv.LoadImage("images/lamp1.jpg")
     groups = extractCards(image)
     getMeaningFromCards(groups, image)
 
