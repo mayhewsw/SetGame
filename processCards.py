@@ -324,11 +324,38 @@ def getMeaningFromCards(groups, image):
         cards.append(Card(g, (number, fill, color, shape)))
 
         #symbols[k] = (color, fill, number, shape)
-        #cv.ShowImage("img", symbol)
+        cv.ShowImage("img", image)
         #cv.WaitKey(0)
 
-    #print cards
+    # Draw results on image
+    newImage = cv.CloneImage(image)
+    for card in cards:
+        fill = card.attributes[1] if card.attributes[1] != "empty" else ""
+        color = card.attributes[2]
+        shape = card.attributes[3]
         
+        if shape[-1] == "s":
+            shape = shape[0:-1]
+        
+        name = "symbolimages/" + color + shape + fill + ".png" # fill + color + shape
+        symbolFake = cv.LoadImage(name)
+        for g in card.symbols:
+            tmp = cv.CreateImage((g[2], g[3]), 8, 3)
+            cv.Resize(symbolFake, tmp)
+            symbolFake = tmp
+            cv.SetImageROI(newImage, g)
+            if cv.GetSize(symbolFake) != cv.GetSize(newImage):
+                print "Warning: size of new symbol doesn't match ROI"
+                continue
+            cv.Copy(symbolFake, newImage)
+
+    cv.ResetImageROI(newImage)
+    
+    cv.ShowImage("NewImage", newImage)
+    cv.ShowImage("Original Image", image)
+    cv.MoveWindow("NewImage",650, 0)
+    
+    cv.WaitKey(0)
 
 
 
@@ -369,15 +396,6 @@ def extractCards(image):
     It is likely that the output from this will go to the
     getMeaningFromCards() function.
     """
-    
-    #if fileName == None:
-    #    print "File name cannot be none..."
-    #    sys.exit(1)
-    #else:
-    #    image = cv.LoadImage(fileName)
-
-    #subImg = cv.CreateImageHeader((submat.width, submat.height), 8, 3)
-    #cv.SetData(subImg, submat.tostring())
 
     gray = cv.CreateImage((image.width, image.height), 8, 1)
     cv.CvtColor(image, gray, cv.CV_RGB2GRAY)
@@ -422,15 +440,20 @@ def extractCards(image):
             b = cv.BoundingRect(contours)
             barea = b[2]*b[3]
 
-            
+
 
             # Only accept contours within a certain area range
             if (area > 250 and area < 5000 and area < image.width*image.height*2/3):
 
-                # Inflate the rectangles slightly
+                # So if the area of the box is much different from the area of the
+                # contour, then ignore it (no code yet)
+                #print barea, area
+                #print "Area diff:", abs(barea-area)
+                
+                # Inflate the rectangles slightly (to make recognition a little easier
                 amount = 5
                 b0 = b[0] - amount if b[0] >= amount else b[0]
-                b1 = b[1] #- amount if b[1] >= amount else 0
+                b1 = b[1] - amount if b[1] >= amount else 0
                 b2 = b[2] + 2*amount if b[2] < 2*amount+image.width else b[2]
                 b3 = b[3] + 2*amount if b[2] < 2*amount+image.height else b[3]
 
@@ -441,8 +464,8 @@ def extractCards(image):
                 bboxes.append(b)
                 
                 # For testing ++++++++++++++++++++++++++++++++++++++++++++++++++++++
-                #cv.Rectangle(gray, (b[0],b[1]), (b[0]+b[2], b[1]+b[3]), (255,0,0,0))
-                #cv.ShowImage("sub", gray)
+                #cv.Rectangle(image, (b[0],b[1]), (b[0]+b[2], b[1]+b[3]), (255,0,0,0))
+                #cv.ShowImage("sub", image)
                 #cv.WaitKey(0)
                 # +++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 
@@ -452,14 +475,26 @@ def extractCards(image):
     bboxes = findDistinctBoxes(bboxes)
 
     areas = []
+    
     # Find average size of bounding boxes and remove those that are not close to the average
     for b in bboxes:
         areas.append(b[2]*b[3])
+
     areas = sorted(areas)
-    print areas
+    #print areas
+
+    # Get the average.
+    # I may want the mode instead.
     avg = sum(areas)/len(areas)
-    print avg
+    #print avg
+
     # remove boxes that are very far from the average
+    #if box is less than half the average, or greater than twice the average, then skip it.
+    for b in bboxes:
+        #print b[2]*b[3]
+        if avg/2 > b[2]*b[3] or b[2]*b[3] > 2*avg:
+            bboxes.remove(b)
+            #print "remove!"
 
     return groupBoxes(bboxes, image)
 
@@ -530,7 +565,7 @@ def groupBoxes(boxes, image):
             width = b[2]
             height = b[3]
         
-            cv.Rectangle(image, (x,y), (x+width, y+height), (0,255,0,0))
+            #cv.Rectangle(image, (x,y), (x+width, y+height), (0,255,0,0))
 
         #cv.ShowImage('img', image)
         #cv.WaitKey(0)
@@ -592,7 +627,7 @@ if __name__ == '__main__':
     #    image = cv.LoadImage(name)
     #    cards[(0,i)] = image
 
-    image = cv.LoadImage("images/lamp2.jpg")
+    image = cv.LoadImage("images/lamp4.jpg")
     groups = extractCards(image)
     getMeaningFromCards(groups, image)
 
