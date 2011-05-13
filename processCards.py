@@ -3,6 +3,12 @@
 
 import cv
 
+# Global variable for debugging. Add text to the string to catch debug flags
+# Options are number, fill, color, shape
+# The check is simply:
+#     if "number" in debug: ...
+debug = ""
+
 class Card:
     """ A useful way to store both bounding box and attributes """
 
@@ -46,8 +52,32 @@ def getThresholdsFromList(l):
     topThresh = max(thresh1, thresh2)
     return bottomThresh, topThresh
 
-def makeBoardImage(cards):
-    pass
+
+def makeBoardImage(cards, newImage):
+    """ Draw results on image using stock symbols """
+    
+    for card in cards:
+        fill = card.attributes[1] if card.attributes[1] != "empty" else ""
+        color = card.attributes[2]
+        shape = card.attributes[3]
+        
+        if shape[-1] == "s":
+            shape = shape[0:-1]
+        
+        name = "symbolimages/" + color + shape + fill + ".png" # fill + color + shape
+        symbolFake = cv.LoadImage(name)
+        for g in card.symbols:
+            tmp = cv.CreateImage((g[2], g[3]), 8, 3)
+            cv.Resize(symbolFake, tmp)
+            symbolFake = tmp
+            cv.SetImageROI(newImage, g)
+            if cv.GetSize(symbolFake) != cv.GetSize(newImage):
+                print "Warning: size of new symbol doesn't match ROI"
+                continue
+            cv.Copy(symbolFake, newImage)
+
+    cv.ResetImageROI(newImage)
+    return newImage
 
 
 def getMeaningFromCards(groups, image):
@@ -60,69 +90,11 @@ def getMeaningFromCards(groups, image):
     extractCards() returns a list of the desired type. It is likely
     that groups is the result of extractCards().
 
-    For reference: my convention is that <<<<<<< opens a block, and
-    >>>>>>>>>>>>>> closes a block. This is supposed to help with
-    readability.
-
     """
-
-    # For debugging. Add text to the string to catch debug flags
-    # Options are number, fill, color, shape
-    # The check is simply:
-    #     if "number" in debug: ...
-    debug = ""
     
     cards=[]
 
-    # This loop is just for getting information on fill before we do the second (main) loop.
-    intensityDiffs = []
-    for g in groups:
-
-        firstSymbol = g[0]
-        
-        total, totalOutside = 0,0
-
-        grayImg = cv.CreateImage((image.width, image.height), 8, 1)
-        cv.CvtColor(image, grayImg, cv.CV_BGR2GRAY)
-     
-        # This adds contrast to the image
-        cv.EqualizeHist(grayImg, grayImg)
-
-        # Go this much to the left of the left side of the bounding box
-        # to sample a line in contrast with the center of the symbol
-        leftOfBoundingBox = 3
-
-        # Testing ++++++++++++++++++++++++++++++
-        if "fill" in debug:
-            cv.Line(grayImg, (firstSymbol[0] + firstSymbol[2]/2, firstSymbol[1]),
-                    (firstSymbol[0] + firstSymbol[2]/2, firstSymbol[1] + firstSymbol[3]),
-                    (0,0,255,0))
-
-            cv.Line(grayImg, (firstSymbol[0]-leftOfBoundingBox-1, firstSymbol[1]),
-                    (firstSymbol[0]-leftOfBoundingBox-1, firstSymbol[1] + firstSymbol[3]),
-                    (0,0,255,0))
-        
-            #cv.ShowImage("gimg", grayImg)
-            #cv.WaitKey(0)
-        # +++++++++++++++++++++++++++++++++++++
-    
-        
-        # Loop over pixels in grayscale image from top to bottom of symbol
-        # in the middle. Also, just to the left
-        for row in range(firstSymbol[1], firstSymbol[1] + firstSymbol[3]):
-            col = firstSymbol[0] + firstSymbol[2]/2
-            colOutside = firstSymbol[0] - leftOfBoundingBox # should be enough to get us outside the symbol
-
-            pixelSymbol = cv.Get2D(grayImg, row, col)
-            pixelOutside = cv.Get2D(grayImg, row, colOutside)
-
-            total += pixelSymbol[0]
-            totalOutside += pixelOutside[0]
-
-        intensityDifference = abs(total - totalOutside)    
-        intensityDiffs.append(intensityDifference)
-
-
+    intensityDiffs = fillPreProcess(groups, image)
 
     # Get fill section uses these
     # intensityDiffs (unsorted) is also used in the Get fill section
@@ -145,219 +117,250 @@ def getMeaningFromCards(groups, image):
         cv.CvtColor(symbol, gray, cv.CV_BGR2GRAY)
         cv.Smooth(gray, gray)
         
-        # Either this..........
-        #cv.Threshold(gray, gray, 60, 255, cv.CV_THRESH_BINARY)
-        #cv.AdaptiveThreshold(gray,gray,255,blockSize=3)
-        #cv.Not(gray,gray)
-
-        # Or this ...........
         cv.Canny(gray, gray, 50,100)
         
-        #cv.Erode(gray, gray)
-        #cv.Erode(gray, gray)
-        #cv.Dilate(gray, gray)
-        # .......................
+        # Get number
+        number = getNumber(g)
 
-    
-        # Get number <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
-        number = len(g)
-        
-        if "number" in debug:
-            print "Number:", number
-        # Got number >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
-
-        
-        # Get color - red, green, purple <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
-        color = "undefined"
-
-        # color mask is a binary image
-        # white for pixels we are interested in
-        # black for pixels not interested in
-        color_mask = cv.CreateImage(cv.GetSize(symbol), 8, 1)
-
-        # mask out the background -> put it to black
-        # The background is mostly white,
-        # So find all pixels that are above a certain threshold
-        min_color = (140, 140, 140)
-        max_color = (255, 255, 255)
-        cv.InRangeS(symbol, cv.Scalar(*min_color), cv.Scalar(*max_color), color_mask)
-
-        # Those pixels will go to black, so invert the image
-        cv.Not(color_mask, color_mask)
-
-    
-        #cv.ShowImage('color', color_mask)        
-
-        #Convert to HSV first, increase saturation, and convert back
-        saturatedImage = cv.CreateImage((symbol.width, symbol.height), 8, 3)
-        cv.CvtColor(symbol, saturatedImage, cv.CV_BGR2HSV)
-
-        saturationShift = 200 # this is huge. It makes the images somewhat ridiculous, but it may be useful.
-        for i in range(saturatedImage.width):
-            for j in range(saturatedImage.height):                
-                p = cv.Get2D(saturatedImage, j, i)
-                p = (p[0], p[1] + saturationShift, p[2])
-                cv.Set2D(saturatedImage, j, i, p)
-
-        # Convert the HSV img back to BGR
-        cv.CvtColor(saturatedImage, saturatedImage, cv.CV_HSV2BGR)
-        #cv.CvtColor(saturatedImg, symbol, cv.CV_HSV2BGR)
-
-        # Just want a black image
-        zeros = cv.CreateImage(cv.GetSize(symbol), 8, 3)
-        cv.SetZero(zeros)
-
-        # Copy the symbol over to zeros, with color_mask as the mask
-        # This effectively copies only the symbol over.
-        cv.Copy(saturatedImage, zeros, color_mask)
-        saturatedImage = zeros
-
-        # Split it into RGB channels
-        rchannel = cv.CreateImage((saturatedImage.width, saturatedImage.height), 8, 1)
-        gchannel = cv.CreateImage((saturatedImage.width, saturatedImage.height), 8, 1)
-        bchannel = cv.CreateImage((saturatedImage.width, saturatedImage.height), 8, 1)
-        cv.Split(saturatedImage,bchannel,gchannel,rchannel,None)
-
-        # The result of cv.Sum() is a tuple. We want the first value
-        reds = cv.Sum(rchannel)
-        greens = cv.Sum(gchannel)
-        blues = cv.Sum(bchannel)
-        #print reds[0], greens[0], blues[0]
-
-        # Just a simple max of summed values
-        m = max(reds[0], greens[0], blues[0])        
-        if m == reds[0]:
-            color = "red"
-        elif m == greens[0]:
-            color = "green"
-        else:
-            color = "purple"
-
-        # For testing ++++++++++++++++++++++++++++++++
-        if "color" in debug:
-            cv.ShowImage('rchan', rchannel)
-            cv.ShowImage('gchan', gchannel)
-            cv.ShowImage('bchan', bchannel)
-
-            cv.ShowImage("gray", gray)
-            cv.ShowImage("symbol", symbol)
-            cv.ShowImage("image", image)
-
-            cv.MoveWindow("symbol", 20, 200)
-            cv.MoveWindow("rchan", 70, 200)
-            cv.MoveWindow("gchan", 120, 200)
-            cv.MoveWindow("bchan", 170, 200)
-            cv.MoveWindow("color", 220, 200)
-
-        # Draw rects
-        ##cv.Rectangle(symbol, (rect1[0], rect1[1]), ( rect1[0] + rect1[2], rect1[1] + rect1[3]), (255,0,0,0))
-        #cv.Rectangle(symbol, (rect2[0], rect2[1]), ( rect2[0] + rect2[2], rect2[1] + rect2[3]), (255,0,0,0))
-        #cv.Rectangle(symbol, (rect3[0], rect3[1]), ( rect3[0] + rect3[2], rect3[1] + rect3[3]), (255,0,0,0))
-    
-        # ++++++++++++++++++++++++++++++++++++++++++++++++
-
-        # Got color >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
-
-
-        # Get fill <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
-        intensityDiff = intensityDiffs[count]
-
-        if "fill" in debug:
-            print "BottomThresh:", bottomThresh
-            print "TopThresh:",topThresh
-            print "IndtensityDiff:", intensityDiff
-            
-        if intensityDiff <= bottomThresh:
-            fill = "empty"
-        elif bottomThresh < intensityDiff < topThresh:
-            fill = "striped"
-        else:
-            fill = "solid"
-
+        # Get fill
+        fill = getFill(intensityDiffs[count], bottomThresh, topThresh)
         count += 1
-        # Got fill >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
+
+        # Get color
+        color = getColor(symbol)
+
+        # Get shape
+        shape = getShape(gray, symbol)
         
-
-        # Get shape - oval, diamond, squiggly <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
-        cv.Dilate(gray, gray)
-        cpy = cv.CloneImage(gray)
-        storage = cv.CreateMemStorage (0)
-        contours = cv.FindContours( cpy, storage)
-
-        perimeter = cv.ArcLength(contours, isClosed=1)
-
-        # Ignore contours that are just outlines of the image
-        while( abs(cv.ContourArea(contours) - symbol.width*symbol.height) < 15 or
-               perimeter < 60):
-            contours = contours.h_next()
-            perimeter = cv.ArcLength(contours, isClosed=1)
-
-        contourRect = cv.BoundingRect(contours)
-        cv.DrawContours(cpy,contours,(0,255,0,0),(255,0,0,0),1)
-
-        cRectArea = contourRect[2]*contourRect[3]
-        ratio = cRectArea/perimeter
-
-        # For testing ++++++++++++++++++++++++++++++++++++
-        if "shape" in debug:
-            cv.ShowImage("gray", gray)
-            cv.ShowImage("cpy",cpy)
-            
-            print cRectArea
-            print "Perimeter: ", perimeter
-            print "Ratio: ", ratio
-        #+++++++++++++++++++++++++++++++++++++++++++++++
-
-        if ratio < 16.5:
-            shape = "diamond"
-        elif ratio < 20:
-            shape = "squiggle"
-        else:
-            shape = "oval"
-        # Got shape >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
-
-
+        # Print out and store
         if number > 1: shape += "s"
         print number, fill, color, shape
         print
 
         cards.append(Card(g, (number, fill, color, shape)))
 
-        #symbols[k] = (color, fill, number, shape)
-        cv.ShowImage("img", image)
-        #cv.WaitKey(0)
 
-    # Draw results on image
     newImage = cv.CloneImage(image)
-    for card in cards:
-        fill = card.attributes[1] if card.attributes[1] != "empty" else ""
-        color = card.attributes[2]
-        shape = card.attributes[3]
-        
-        if shape[-1] == "s":
-            shape = shape[0:-1]
-        
-        name = "symbolimages/" + color + shape + fill + ".png" # fill + color + shape
-        symbolFake = cv.LoadImage(name)
-        for g in card.symbols:
-            tmp = cv.CreateImage((g[2], g[3]), 8, 3)
-            cv.Resize(symbolFake, tmp)
-            symbolFake = tmp
-            cv.SetImageROI(newImage, g)
-            if cv.GetSize(symbolFake) != cv.GetSize(newImage):
-                print "Warning: size of new symbol doesn't match ROI"
-                continue
-            cv.Copy(symbolFake, newImage)
-
-    cv.ResetImageROI(newImage)
+    newImage = makeBoardImage(cards, newImage)
     
     cv.ShowImage("NewImage", newImage)
     cv.ShowImage("Original Image", image)
     cv.MoveWindow("NewImage",650, 0)
+
+    # Around here, we will actually want to solve the game
     
     cv.WaitKey(0)
 
 
+def fillPreProcess(groups, image):
+    """ This loop is just for getting information on fill before we do the second (main) loop."""
+    
+    intensityDiffs = []
+    for g in groups:
+        
+        firstSymbol = g[0]
+        
+        total, totalOutside = 0,0
+        
+        grayImg = cv.CreateImage((image.width, image.height), 8, 1)
+        cv.CvtColor(image, grayImg, cv.CV_BGR2GRAY)
+        
+        # This adds contrast to the image
+        cv.EqualizeHist(grayImg, grayImg)
+        
+        # Go this much to the left of the left side of the bounding box
+        # to sample a line in contrast with the center of the symbol
+        leftOfBoundingBox = 3
+    
+        # Testing ++++++++++++++++++++++++++++++
+        if "fill" in debug:
+            cv.Line(grayImg, (firstSymbol[0] + firstSymbol[2]/2, firstSymbol[1]),
+                    (firstSymbol[0] + firstSymbol[2]/2, firstSymbol[1] + firstSymbol[3]),
+                    (0,0,255,0))
+            
+            cv.Line(grayImg, (firstSymbol[0]-leftOfBoundingBox-1, firstSymbol[1]),
+                    (firstSymbol[0]-leftOfBoundingBox-1, firstSymbol[1] + firstSymbol[3]),
+                    (0,0,255,0))
+            
+            #cv.ShowImage("gimg", grayImg)
+            #cv.WaitKey(0)
+            # +++++++++++++++++++++++++++++++++++++
+            
+            
+        # Loop over pixels in grayscale image from top to bottom of symbol
+        # in the middle. Also, just to the left
+        for row in range(firstSymbol[1], firstSymbol[1] + firstSymbol[3]):
+            col = firstSymbol[0] + firstSymbol[2]/2
+            colOutside = firstSymbol[0] - leftOfBoundingBox # should be enough to get us outside the symbol
+            
+            pixelSymbol = cv.Get2D(grayImg, row, col)
+            pixelOutside = cv.Get2D(grayImg, row, colOutside)
+            
+            total += pixelSymbol[0]
+            totalOutside += pixelOutside[0]
+            
+        intensityDifference = abs(total - totalOutside)    
+        intensityDiffs.append(intensityDifference)
+
+    return intensityDiffs
+    
+
+def getFill(intensityDiff, bottomThresh, topThresh):
+
+    if "fill" in debug:
+        print "BottomThresh:", bottomThresh
+        print "TopThresh:",topThresh
+        print "IndtensityDiff:", intensityDiff
+        
+    if intensityDiff <= bottomThresh:
+        fill = "empty"
+    elif bottomThresh < intensityDiff < topThresh:
+        fill = "striped"
+    else:
+        fill = "solid"
+        
+    return fill
+
+
+def getShape(gray, symbol):
+    # Get shape - oval, diamond, squiggly
+    cv.Dilate(gray, gray)
+    cpy = cv.CloneImage(gray)
+    storage = cv.CreateMemStorage (0)
+    contours = cv.FindContours( cpy, storage)
+    
+    perimeter = cv.ArcLength(contours, isClosed=1)
+    
+    # Ignore contours that are just outlines of the image
+    while( abs(cv.ContourArea(contours) - symbol.width*symbol.height) < 15 or
+           perimeter < 60):
+        contours = contours.h_next()
+        perimeter = cv.ArcLength(contours, isClosed=1)
+
+    contourRect = cv.BoundingRect(contours)
+    cv.DrawContours(cpy,contours,(0,255,0,0),(255,0,0,0),1)
+
+    cRectArea = contourRect[2]*contourRect[3]
+    ratio = cRectArea/perimeter
+
+    # For testing ++++++++++++++++++++++++++++++++++++
+    if "shape" in debug:
+        cv.ShowImage("gray", gray)
+        cv.ShowImage("cpy",cpy)
+        
+        print cRectArea
+        print "Perimeter: ", perimeter
+        print "Ratio: ", ratio
+    #+++++++++++++++++++++++++++++++++++++++++++++++
+
+    if ratio < 16.5:
+        shape = "diamond"
+    elif ratio < 20:
+        shape = "squiggle"
+    else:
+        shape = "oval"
+
+    return shape
+
+
+def getColor(symbol):
+    # Get color - red, green, purple
+    color = "undefined"
+    
+    # color mask is a binary image
+    # white for pixels we are interested in
+    # black for pixels not interested in
+    color_mask = cv.CreateImage(cv.GetSize(symbol), 8, 1)
+    
+    # mask out the background -> put it to black
+    # The background is mostly white,
+    # So find all pixels that are above a certain threshold
+    min_color = (140, 140, 140)
+    max_color = (255, 255, 255)
+    cv.InRangeS(symbol, cv.Scalar(*min_color), cv.Scalar(*max_color), color_mask)
+    
+    # Those pixels will go to black, so invert the image
+    cv.Not(color_mask, color_mask)
+        
+    #Convert to HSV first, increase saturation, and convert back
+    saturatedImage = cv.CreateImage((symbol.width, symbol.height), 8, 3)
+    cv.CvtColor(symbol, saturatedImage, cv.CV_BGR2HSV)
+    
+    saturationShift = 200 # this is huge. It makes the images somewhat ridiculous, but it may be useful.
+    for i in range(saturatedImage.width):
+        for j in range(saturatedImage.height):                
+            p = cv.Get2D(saturatedImage, j, i)
+            p = (p[0], p[1] + saturationShift, p[2])
+            cv.Set2D(saturatedImage, j, i, p)
+
+    # Convert the HSV img back to BGR
+    cv.CvtColor(saturatedImage, saturatedImage, cv.CV_HSV2BGR)
+    #cv.CvtColor(saturatedImg, symbol, cv.CV_HSV2BGR)
+    
+    # Just want a black image
+    zeros = cv.CreateImage(cv.GetSize(symbol), 8, 3)
+    cv.SetZero(zeros)
+    
+    # Copy the symbol over to zeros, with color_mask as the mask
+    # This effectively copies only the symbol over.
+    cv.Copy(saturatedImage, zeros, color_mask)
+    saturatedImage = zeros
+    
+    # Split it into RGB channels
+    rchannel = cv.CreateImage((saturatedImage.width, saturatedImage.height), 8, 1)
+    gchannel = cv.CreateImage((saturatedImage.width, saturatedImage.height), 8, 1)
+    bchannel = cv.CreateImage((saturatedImage.width, saturatedImage.height), 8, 1)
+    cv.Split(saturatedImage,bchannel,gchannel,rchannel,None)
+    
+    # The result of cv.Sum() is a tuple. We want the first value
+    reds = cv.Sum(rchannel)
+    greens = cv.Sum(gchannel)
+    blues = cv.Sum(bchannel)
+    #print reds[0], greens[0], blues[0]
+    
+    # Just a simple max of summed values
+    m = max(reds[0], greens[0], blues[0])        
+    if m == reds[0]:
+        color = "red"
+    elif m == greens[0]:
+        color = "green"
+    else:
+        color = "purple"
+        
+    # For testing ++++++++++++++++++++++++++++++++
+    if "color" in debug:
+        cv.ShowImage('rchan', rchannel)
+        cv.ShowImage('gchan', gchannel)
+        cv.ShowImage('bchan', bchannel)
+        
+        cv.ShowImage("gray", gray)
+        cv.ShowImage("symbol", symbol)
+        cv.ShowImage("image", image)
+        
+        cv.MoveWindow("symbol", 20, 200)
+        cv.MoveWindow("rchan", 70, 200)
+        cv.MoveWindow("gchan", 120, 200)
+        cv.MoveWindow("bchan", 170, 200)
+        cv.MoveWindow("color", 220, 200)
+
+    # Draw rects
+    ##cv.Rectangle(symbol, (rect1[0], rect1[1]), ( rect1[0] + rect1[2], rect1[1] + rect1[3]), (255,0,0,0))
+    #cv.Rectangle(symbol, (rect2[0], rect2[1]), ( rect2[0] + rect2[2], rect2[1] + rect2[3]), (255,0,0,0))
+    #cv.Rectangle(symbol, (rect3[0], rect3[1]), ( rect3[0] + rect3[2], rect3[1] + rect3[3]), (255,0,0,0))
+        
+    # ++++++++++++++++++++++++++++++++++++++++++++++++
+
+    return color
+
+
+def getNumber(g):
+    number = len(g)
+    
+    if "number" in debug:
+        print "Number:", number
+
+    return number
+    
 
 def findDistinctBoxes(boundingboxes):
     """ Given a list of bounding boxes, with many duplicates, or boxes close to each other, 
@@ -440,11 +443,12 @@ def extractCards(image):
             b = cv.BoundingRect(contours)
             barea = b[2]*b[3]
 
-
+            
 
             # Only accept contours within a certain area range
-            if (area > 250 and area < 5000 and area < image.width*image.height*2/3):
-
+            if (area > 250 and area < 5000 and area < image.width*image.height*2/3
+                and 1 < barea/area < 5):
+                
                 # So if the area of the box is much different from the area of the
                 # contour, then ignore it (no code yet)
                 #print barea, area
@@ -462,11 +466,13 @@ def extractCards(image):
                 b = (b0, b1, b2, b3)
                 
                 bboxes.append(b)
-                
+
+
                 # For testing ++++++++++++++++++++++++++++++++++++++++++++++++++++++
                 #cv.Rectangle(image, (b[0],b[1]), (b[0]+b[2], b[1]+b[3]), (255,0,0,0))
                 #cv.ShowImage("sub", image)
                 #cv.WaitKey(0)
+                #print area, barea, barea/area
                 # +++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 
                 
@@ -477,25 +483,22 @@ def extractCards(image):
     areas = []
     
     # Find average size of bounding boxes and remove those that are not close to the average
-    for b in bboxes:
-        areas.append(b[2]*b[3])
+    areas = map(lambda b: b[2]*b[3], bboxes)
 
     areas = sorted(areas)
-    #print areas
+    print areas
 
     # Get the average.
     # I may want the mode instead.
     avg = sum(areas)/len(areas)
-    #print avg
+    print avg
 
     # remove boxes that are very far from the average
     #if box is less than half the average, or greater than twice the average, then skip it.
-    for b in bboxes:
-        #print b[2]*b[3]
-        if avg/2 > b[2]*b[3] or b[2]*b[3] > 2*avg:
-            bboxes.remove(b)
-            #print "remove!"
+    #bboxes = [b for b in bboxes if not (avg/2 > b[2]*b[3] or b[2]*b[3] > 2*avg)]
 
+    
+            
     return groupBoxes(bboxes, image)
 
 
@@ -586,10 +589,10 @@ def drawBoundingBoxes(bb, img):
         y = b[1]
         width = b[2]
         height = b[3]
-        #cv.Rectangle(img, (x,y), (x+width, y+height), (0,255,0,0))
+        cv.Rectangle(img, (x,y), (x+width, y+height), (0,255,0,0))
 
-    #cv.ShowImage("bb", img)
-    #cv.WaitKey(0)
+    cv.ShowImage("bb", img)
+    cv.WaitKey(0)
     
 def findDistinctBoxes(boundingboxes):
     """Given a list of bounding boxes, with many duplicates, or boxes close to each other,
@@ -627,7 +630,7 @@ if __name__ == '__main__':
     #    image = cv.LoadImage(name)
     #    cards[(0,i)] = image
 
-    image = cv.LoadImage("images/lamp1.jpg")
+    image = cv.LoadImage("images/test1.jpg")
     groups = extractCards(image)
     getMeaningFromCards(groups, image)
 
