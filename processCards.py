@@ -443,11 +443,12 @@ def extractCards(image):
             b = cv.BoundingRect(contours)
             barea = b[2]*b[3]
 
+            acceptableRatioBottom = 1
+            acceptableRatioTop = 2
             
-
             # Only accept contours within a certain area range
             if (area > 250 and area < 5000 and area < image.width*image.height*2/3
-                and 1 < barea/area < 5):
+                and acceptableRatioBottom < barea/area < acceptableRatioTop):
                 
                 # So if the area of the box is much different from the area of the
                 # contour, then ignore it (no code yet)
@@ -496,7 +497,7 @@ def extractCards(image):
     # remove boxes that are very far from the average
     #if box is less than half the average, or greater than twice the average, then skip it.
     # We deal with this already. 
-    #bboxes = [b for b in bboxes if not (avg/2 > b[2]*b[3] or b[2]*b[3] > 2*avg)]
+    bboxes = [b for b in bboxes if not (avg/2 > b[2]*b[3] or b[2]*b[3] > 2*avg)]
 
     
             
@@ -583,7 +584,6 @@ def groupBoxes(boxes, image):
     return groupsOfCards
         
 
-    
 def drawBoundingBoxes(bb, img):
     for b in bb:
         x = b[0]
@@ -594,6 +594,7 @@ def drawBoundingBoxes(bb, img):
 
     cv.ShowImage("bb", img)
     cv.WaitKey(0)
+
     
 def findDistinctBoxes(boundingboxes):
     """Given a list of bounding boxes, with many duplicates, or boxes close to each other,
@@ -631,7 +632,7 @@ if __name__ == '__main__':
     #    image = cv.LoadImage(name)
     #    cards[(0,i)] = image
 
-    image = cv.LoadImage("images/test1.jpg")
+    image = cv.LoadImage("images/lamp2.jpg")
     groups = extractCards(image)
     getMeaningFromCards(groups, image)
 
