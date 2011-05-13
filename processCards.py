@@ -495,6 +495,7 @@ def extractCards(image):
 
     # remove boxes that are very far from the average
     #if box is less than half the average, or greater than twice the average, then skip it.
+    # We deal with this already. 
     #bboxes = [b for b in bboxes if not (avg/2 > b[2]*b[3] or b[2]*b[3] > 2*avg)]
 
     
