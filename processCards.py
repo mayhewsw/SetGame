@@ -13,12 +13,15 @@ debug = ""
 class Card:
     """ A useful way to store both bounding box and attributes """
 
-    def __init__(self, symbols, attributes):
+    def __init__(self, symbols, number, fill, color, shape):
         self.symbols = symbols
-        self.attributes = attributes
+        self.number = number
+        self.color = color
+        self.shape = shape
+        self.fill = fill
 
     def __str__(self):
-        return "Card: " + str(symbols) + str( attributes)
+        return "Card: " + str(self.color) + self.symbols + "other stuff"
     
 
 def getThresholdsFromList(l):
@@ -138,7 +141,8 @@ def getMeaningFromCards(groups, image):
         print number, fill, color, shape
         print
 
-        cards.append(Card(g, (number, fill, color, shape)))
+        c = Card(g, number, fill, color, shape)
+        cards.append(c)
 
 
     newImage = cv.CloneImage(image)
@@ -154,6 +158,9 @@ def getMeaningFromCards(groups, image):
         cv.WaitKey(0)
     else:
         cv.WaitKey(100)
+
+    return cards
+
 
 def fillPreProcess(groups, image):
     """ This loop is just for getting information on fill before we do the second (main) loop."""
@@ -638,6 +645,19 @@ def groupBoxes(boxes, image):
 
     return groupsOfCards
         
+def SolveGame(cards):
+    """ This will accept a set of 3 cards """
+    card1 = cards[0]
+    card2 = cards[1]
+    card3 = cards[2]
+
+    return (((card1.color == card2.color and card2.color == card3.color) or (card1.color != card2.color and card1.color != card3.color and card2.color != card3.color)) and
+	    ((card1.symbol == card2.symbol and card2.symbol == card3.symbol) or (card1.symbol != card2.symbol and card1.symbol != card3.symbol and card2.symbol != card3.symbol)) and
+	    ((card1.number == card2.number and card2.number == card3.number) or (card1.number != card2.number and card1.number != card3.number and card2.number != card3.number)) and
+	    ((card1.shading == card2.shading and card2.shading == card3.shading) or (card1.shading != card2.shading and card1.shading != card3.shading and card2.shading != card3.shading)));
+}
+
+
 
 def drawBoundingBoxes(bb, img):
     for b in bb:

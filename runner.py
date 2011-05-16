@@ -49,7 +49,8 @@ while 1:
     # Run the recognizer
     if runAndProcess:
         groups = processCards.extractCards(frame)
-        processCards.getMeaningFromCards(groups, frame)
+        card = processCards.getMeaningFromCards(groups, frame)
+        
     else:
         cv.ShowImage("webcam", frame)
         cv.WaitKey(100) # wait for a small amount of time
