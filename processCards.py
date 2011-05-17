@@ -3,6 +3,7 @@
 
 import cv
 import math
+import os
 
 # Global variable for debugging. Add text to the string to catch debug flags
 # Options are number, fill, color, shape
@@ -138,6 +139,7 @@ def getMeaningFromCards(groups, image):
         shape = getShape(gray, symbol)
         
         # Print out and store
+        os.system("espeak "+str(number)+" "+fill+" "+color+" "+shape)
         print number, fill, color, shape
         print
 
