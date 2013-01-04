@@ -537,7 +537,7 @@ def extractCards(image):
                 bboxes.append(b)
 
 
-                # For testing ++++++++++++++++++++++++++++++++++++++++++++++++++++++
+                # For testing - this shows all boxes being recognized +++++++++++++
                 #cv.Rectangle(image, (b[0],b[1]), (b[0]+b[2], b[1]+b[3]), (255,0,0,0))
                 #cv.ShowImage("sub", image)
                 #cv.WaitKey(0)
@@ -570,9 +570,7 @@ def extractCards(image):
     #if box is less than half the average, or greater than twice the average, then skip it.
     # We deal with this already. 
     bboxes = [b for b in bboxes if not (avg/2 > b[2]*b[3] or b[2]*b[3] > 2*avg)]
-
-    
-            
+     
     return groupBoxes(bboxes, image)
 
 
@@ -641,10 +639,10 @@ def groupBoxes(boxes, image):
             width = b[2]
             height = b[3]
         
-            #cv.Rectangle(image, (x,y), (x+width, y+height), (0,255,0,0))
+            cv.Rectangle(image, (x,y), (x+width, y+height), (0,255,0,0))
 
-        #cv.ShowImage('img', image)
-        #cv.WaitKey(0)
+        cv.ShowImage('img', image)
+        cv.WaitKey(0)
     # +++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 
     # Give a warning for normal gameplay
