@@ -45,6 +45,7 @@ def getThresholdsFromList(l):
     # With tuples, sorted sorts by the first element anyway.
     # We want the largest elements at the beginning, so we reverse
     jumps = sorted(jumps, reverse=True)
+    print jumps
     thresh1 = jumps[0][1] # largest jump
     thresh2 = jumps[1][1] # second largest jump
 
@@ -100,6 +101,7 @@ def getMeaningFromCards(groups, image):
     
     cards=[]
 
+    # what does this do?
     intensityDiffs = fillPreProcess(groups, image)
 
     # Get fill section uses these
@@ -113,28 +115,59 @@ def getMeaningFromCards(groups, image):
         # Since all the symbols on any card are the same,
         # we will only concern ourselves with the first one
         # (we might consider looking at all symbols to get a more
-        # accurate reading)
+        # accurate reading) (yes, good idea)
         firstSymbol = g[0]
 
+        print firstSymbol
+        
         # Extract just the portion of the image that is the symbol
-        # Also create a grayscale version and smooth it
         symbol = cv.GetSubRect(image, firstSymbol)
+
+
+        # Process to normalize image, using white part of image ----------------
+        # cv.ShowImage("Symbol", symbol)
+        # cv.WaitKey(0)
+
+        
+        # first find the white part of the image
+        whitebox = cv.GetSubRect(symbol, (1,1,6,6))
+        # drawBoundingBoxes([(1,1,6,6)],symbol) # this is good for fill
+        # drawBoundingBoxes([(20,20,10,10)],symbol) # this is good for fill
+
+
+        # Split it into RGB channels
+        rchannel = cv.CreateImage((whitebox.width, whitebox.height), 8, 1)
+        gchannel = cv.CreateImage((whitebox.width, whitebox.height), 8, 1)
+        bchannel = cv.CreateImage((whitebox.width, whitebox.height), 8, 1)
+        cv.Split(whitebox,bchannel,gchannel,rchannel,None)
+
+        print cv.Avg(whitebox)
+        print cv.AddS(whitebox, 155, whitebox)
+        print cv.Avg(whitebox)
+        
+        col = cv.GetCol(whitebox, 0)
+        print cv.GetRow(col,0).channels
+        print cv.GetRow(col,0).type
+        print cv.GetRow(col,0)
+        # ---------------------------------------------------------------------
+
+        # Also create a grayscale version and smooth it (why?)
+        # This is used for shapefinding
         gray = cv.CreateImage((symbol.width, symbol.height), 8, 1)
         cv.CvtColor(symbol, gray, cv.CV_BGR2GRAY)
         cv.Smooth(gray, gray)
-        
         cv.Canny(gray, gray, 50,100)
         
         # Get number
         number = getNumber(g)
-
+        
         # Get fill
         fill = getFill(intensityDiffs[count], bottomThresh, topThresh)
         count += 1
-
+        
         # Get color
         color = getColor(symbol)
-
+        
         # Get shape
         shape = getShape(gray, symbol)
         
@@ -142,18 +175,19 @@ def getMeaningFromCards(groups, image):
         #os.system("espeak \""+str(number)+" "+fill+" "+color+" "+shape+"\"")
         print number, fill, color, shape
         print
-
+        
         c = Card(g, number, fill, color, shape)
         cards.append(c)
-
-
+        
+        
     newImage = cv.CloneImage(image)
     newImage = makeBoardImage(cards, newImage)
     
     cv.ShowImage("NewImage", newImage)
     cv.ShowImage("Original Image", image)
     cv.MoveWindow("NewImage",650, 0)
-
+    cv.WaitKey(0)
+    
     # Around here, we will actually want to solve the game
 
     if len(debug) > 0:
@@ -173,7 +207,9 @@ def fillPreProcess(groups, image):
     
     intensityDiffs = []
     for g in groups:
-        
+
+        if len(g) == 0:
+            continue
         firstSymbol = g[0]
         
         total, totalOutside = 0,0
@@ -208,7 +244,6 @@ def fillPreProcess(groups, image):
         for row in range(firstSymbol[1], firstSymbol[1] + firstSymbol[3]):
             col = firstSymbol[0] + firstSymbol[2]/2
             colOutside = firstSymbol[0] - leftOfBoundingBox # should be enough to get us outside the symbol
-            
             pixelSymbol = cv.Get2D(grayImg, row, col)
             pixelOutside = cv.Get2D(grayImg, row, colOutside)
             
@@ -468,12 +503,15 @@ def extractCards(image):
     getMeaningFromCards() function.
     """
 
+    # make a grayscale version
     gray = cv.CreateImage((image.width, image.height), 8, 1)
     cv.CvtColor(image, gray, cv.CV_RGB2GRAY)
 
+    # smooth it
     cv.Smooth(gray, gray)
 
     # Nice to have a dynamic way of finding this! -> AdaptiveThreshold is that
+    # What is this?
     thresh = 90 # play around with this 
     max_value = 255
     #cv.Threshold(gray, gray, thresh, max_value, cv.CV_THRESH_BINARY)
@@ -485,7 +523,6 @@ def extractCards(image):
     #cv.Erode(gray, gray)
     #cv.Erode(gray, gray)
     cv.Dilate(gray, gray)
-
 
     #cv.Not(gray,gray)
     #cv.ShowImage("sub", gray)
@@ -553,10 +590,10 @@ def extractCards(image):
     
     # Find average size of bounding boxes and remove those that are not close to the average
     areas = map(lambda b: b[2]*b[3], bboxes)
-
+    
     areas = sorted(areas)
-    print areas
-
+    # print areas
+    
     # Get the average.
     # I may want the mode instead.
     avg = 0
@@ -632,24 +669,24 @@ def groupBoxes(boxes, image):
 
 
     # Testing: this will show each group of boxes as it is recognized +++++
-    for g in groupsOfCards:
-        for b in g:
-            x = b[0]
-            y = b[1]
-            width = b[2]
-            height = b[3]
+    # for g in groupsOfCards:
+    #     for b in g:
+    #         x = b[0]
+    #         y = b[1]
+    #         width = b[2]
+    #         height = b[3]
         
-            cv.Rectangle(image, (x,y), (x+width, y+height), (0,255,0,0))
+    #         cv.Rectangle(image, (x,y), (x+width, y+height), (0,255,0,0))
 
-        cv.ShowImage('img', image)
-        cv.WaitKey(0)
+    #     cv.ShowImage('img', image)
+    #     cv.WaitKey(0)
     # +++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 
     # Give a warning for normal gameplay
     # (should be 12 cards)
     if len(groupsOfCards) != 12:
         s = "Warning: groupboxes has detected " + str(len(groupsOfCards)) + " cards."
-        os.system("espeak \"" + s + "\"") 
+        #os.system("espeak \"" + s + "\"") 
         print s
 
     return groupsOfCards
@@ -677,9 +714,9 @@ def SolveGame(cards):
                     print
 
 
-    if count  > 0:
-        os.system("espeak \"I found " + str(count) + " sets. Press enter to continue.\"")
-        cv.WaitKey(0)
+    #if count  > 0:
+        #os.system("espeak \"I found " + str(count) + " sets. Press enter to continue.\"")
+        #cv.WaitKey(0)
                 
                 
 
@@ -735,8 +772,9 @@ if __name__ == '__main__':
     #    cards[(0,i)] = image
 
     # Setting this to have len > 0 causes the image to be shown later
-    debug = "1"
+    debug = ""
     image = cv.LoadImage("images/lamp1.jpg")
     groups = extractCards(image)
     getMeaningFromCards(groups, image)
+    
 
