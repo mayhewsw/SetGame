@@ -73,8 +73,6 @@ def equalizeColors(frame):
 
 if __name__ == '__main__':
     global amount
-    original = cv.LoadImage('/media/sda1/BeagleSetGame/images/lamp1.jpg')
-    cv.ShowImage('originalimage', original)
 
     hue = 0
     brightness = 0
