@@ -1,0 +1,37 @@
+import java.util.List;
+
+/* Here we define the labels our classifier can take. They are "spam" and "ham".
+   Again, we rely on the Document class, which we will discuss later.  */
+discrete{"squiggle", "diamond", "oval"} Label(SetShape s) <- { return s.getShape(); }
+
+discrete ShapeClassifier(SetShape s) <-
+        learn Label
+    using Features
+
+// Use a DocumentReader to load the training data
+// We will discuss the DocumentReader class below
+    from new ImageReader("data/spam/train")
+
+// Train for 5 rounds
+        5 rounds
+
+// Use a NaiveBayes classifier (other options listed below)
+    with new NaiveBayes()
+// with new SupportVectorMachine()
+// with new AdaBoost()
+// with new LinearThresholdUnit(0.5)
+// with new PassiveAggressive()
+// with new SparseConfidenceWeighted()
+// with new SparseMIRA()
+// with new SparseNetworkLearner()
+// with SparseAveragedPerceptron {
+//   learningRate = 0.1 ;
+//   thickness = 3.5;
+// }
+
+// Use a DocumentReader to load the testing data
+    testFrom new ImageReader("data/spam/test")
+
+// Give an update every 2000 documents
+        progressOutput 2000
+    end

@@ -1,0 +1,48 @@
+package io.github.mayhewsw.setgame;
+
+//import io.github.mayhewsw.setgame.SetShape;
+//import io.github.mayhewsw.setgame.ImageReader;
+
+discrete ColorFeatures(SetShape s) <- {
+    int[] f = s.getColorFeatures();
+    //for(int i = 0; i < f.length; i++){
+    //    sense "color:" + i + ":" + f[i];
+    //}
+    return f[0] + "," + f[1] + "," + f[2];
+}
+
+/* Here we define the labels our classifier can take. They are "spam" and "ham".
+   Again, we rely on the Document class, which we will discuss later.  */
+discrete{"red", "purple", "green"} Label(SetShape s) <- { return s.getColor(); }
+
+discrete ColorClassifier(SetShape s) <-
+    learn Label
+    using ColorFeatures
+    
+// Use a DocumentReader to load the training data
+// We will discuss the DocumentReader class below
+    from new ImageReader("../images/training")
+    
+// Train for 5 rounds
+    5 rounds
+    
+// Use a NaiveBayes classifier (other options listed below)
+//    with new NaiveBayes()
+// with new SupportVectorMachine()
+// with new AdaBoost()
+// with new LinearThresholdUnit(0.5)
+// with new PassiveAggressive()
+// with new SparseConfidenceWeighted()
+// with new SparseMIRA()
+ with new SparseNetworkLearner()
+//with SparseAveragedPerceptron {
+//   learningRate = 0.1 ;
+//   thickness = 3.5;
+// }
+
+
+    testFrom new ImageReader("../images/testing")
+    
+// Give an update every 2000 documents
+    progressOutput 2000
+    end

@@ -1,16 +1,11 @@
-This is the Beagle Set Playing project
+## SetGame
 
-We will be using OpenCV, the DLP pico projector, and the PlayStation Eye.
+Written in Java, using LBJava. 
 
-This is for ECE497: 32-bit Embedded Linux, a class at Rose-Hulman Institute of Technology 
+To Run this project, open eclipse. SetRunner.java is the one you want.
 
-Oh dear... how are you supposed to run this?
+You can also run:
 
-runner.py:
-  -- expects a file called "cameraConfig.cfg" (but doesn't have to be there)
-    -- needs to have definitions of hue, brightness, saturation (HSV) values
-  -- Other stuff
-  
-  
-  
-Warning: the program will talk to you! Search for espeak.
+>> sbt lbjclean
+>> sbt lbjcompile
+>> sbt run
