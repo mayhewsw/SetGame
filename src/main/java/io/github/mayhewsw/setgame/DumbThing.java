@@ -10,7 +10,8 @@ import org.apache.commons.io.IOUtils;
 import org.opencv.core.Mat;
 import org.opencv.highgui.Highgui;
 
-import LBJ2.parse.Parser;
+import edu.illinois.cs.cogcomp.lbjava.parse.Parser;
+
 
 public class DumbThing implements Parser {
 

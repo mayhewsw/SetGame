@@ -14,7 +14,8 @@ import org.apache.commons.io.IOUtils;
 import org.opencv.core.Mat;
 import org.opencv.highgui.Highgui;
 
-import LBJ2.parse.Parser;
+import edu.illinois.cs.cogcomp.lbjava.parse.Parser;
+
 
 public class ImageReader implements Parser {
 
@@ -27,8 +28,9 @@ public class ImageReader implements Parser {
 		
 		PropertiesConfiguration config;
 		try {
-			//config = new PropertiesConfiguration("src/main/resources/setgame.conf");
-			config = new PropertiesConfiguration("setgame.conf");
+			// It needs to be this way, because LBJava doesn't know about classpath...
+			config = new PropertiesConfiguration("src/main/resources/setgame.conf");
+			//config = new PropertiesConfiguration("setgame.conf");
 			System.load(config.getString("libpath"));
 			
 		} catch (ConfigurationException c) {
@@ -56,14 +58,14 @@ public class ImageReader implements Parser {
 
 	}
 
-	@Override
+	//@Override
 	public void close() {
 		// TODO Auto-generated method stub
 
 	}
 
 	@SuppressWarnings("unchecked")
-	@Override
+	//@Override
 	public Object next() {
 
 		if(currimg >= fnames.length) return null;
@@ -97,7 +99,7 @@ public class ImageReader implements Parser {
 		return ss;
 	}
 
-	@Override
+	//@Override
 	public void reset() {
 		// TODO Auto-generated method stub
 

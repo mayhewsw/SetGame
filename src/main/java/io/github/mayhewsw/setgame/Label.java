@@ -1,12 +1,13 @@
-// Modifying this comment will cause the next execution of LBJ2 to overwrite this file.
+// Modifying this comment will cause the next execution of LBJava to overwrite this file.
 // F1B88000000000000000B49CC2E4E2A4D294DA65A2A4D4152D1505A282D2A28C94501B2DB825353F49A651C721392537432835B4283321B02551A85351C64751AA5108ABA4B82F41A85F2D35B4C93F372FB84343DA51A61020769E7D05000000
 
 package io.github.mayhewsw.setgame;
 
-import LBJ2.classify.*;
-import LBJ2.infer.*;
-import LBJ2.learn.*;
-import LBJ2.parse.*;
+import edu.illinois.cs.cogcomp.lbjava.classify.*;
+import edu.illinois.cs.cogcomp.lbjava.infer.*;
+import edu.illinois.cs.cogcomp.lbjava.io.IOUtilities;
+import edu.illinois.cs.cogcomp.lbjava.learn.*;
+import edu.illinois.cs.cogcomp.lbjava.parse.*;
 
 
 public class Label extends Classifier
