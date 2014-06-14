@@ -27,7 +27,8 @@ public class ImageReader implements Parser {
 		
 		PropertiesConfiguration config;
 		try {
-			config = new PropertiesConfiguration("src/main/resources/setgame.conf");
+			//config = new PropertiesConfiguration("src/main/resources/setgame.conf");
+			config = new PropertiesConfiguration("setgame.conf");
 			System.load(config.getString("libpath"));
 			
 		} catch (ConfigurationException c) {

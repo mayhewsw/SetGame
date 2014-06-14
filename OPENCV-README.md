@@ -1,5 +1,8 @@
 README for Java CPP files.
 
+Follow this guide:
+http://docs.opencv.org/2.4.4-beta/doc/tutorials/introduction/desktop_java/java_dev_intro.html
+
 opencv lives in:
 /home/stephen/github/SetGame/opencv
 

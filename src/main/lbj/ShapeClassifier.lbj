@@ -1,4 +1,7 @@
+package io.github.mayhewsw.setgame;
+
 import java.util.List;
+
 
 /* Here we define the labels our classifier can take. They are "spam" and "ham".
    Again, we rely on the Document class, which we will discuss later.  */

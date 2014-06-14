@@ -1,4 +1,4 @@
-BUILD=/home/stephen/github/BeagleSetGame/opencv/build/
+BUILD=/home/stephen/github/SetGame/opencv/build
 
-cp $BUILD/bin/opencv-248.jar .
-cp $BUILD/lib/libopencv_java248.so .
+cp $BUILD/bin/opencv-300.jar .
+cp $BUILD/lib/libopencv_java300.so .

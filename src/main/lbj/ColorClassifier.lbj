@@ -21,7 +21,7 @@ discrete ColorClassifier(SetShape s) <-
     
 // Use a DocumentReader to load the training data
 // We will discuss the DocumentReader class below
-    from new ImageReader("../images/training")
+    from new ImageReader("images/training")
     
 // Train for 5 rounds
     5 rounds
@@ -41,7 +41,7 @@ discrete ColorClassifier(SetShape s) <-
 // }
 
 
-    testFrom new ImageReader("../images/testing")
+    testFrom new ImageReader("images/testing")
     
 // Give an update every 2000 documents
     progressOutput 2000

@@ -28,7 +28,6 @@ makeclasspath := {
    val p = new java.io.PrintWriter(new java.io.File("cp.txt"))
 }
 
-
 lazy val getLBJSettings = taskKey[Map[String, String]]("Gets LBJ Settings")
 
 getLBJSettings := {
@@ -55,7 +54,20 @@ lbjclean := {
    import complete.DefaultParsers._
    println("Cleaning LBJ...")
    val args: Seq[String] = spaceDelimited("<arg>").parsed
+   println(args)
    val lbjsettings: Map[String, String] = getLBJSettings.value
    val cp: String = ((dependencyClasspath in Compile).value.files).mkString(":") + ":" + lbjsettings("dflag")
    "java -cp %s LBJ2.Main -x -d %s -gsp %s -sourcepath %s %s".format(cp, lbjsettings("dflag"), lbjsettings("sourcepath"), lbjsettings("sourcepath"), args.head) !
 }
+
+val demo = inputKey[Unit]("A demo input task.")
+
+demo := {
+   import complete.DefaultParsers._
+    // get the result of parsing
+    val args: Seq[String] = spaceDelimited("<arg>").parsed
+    // Here, we also use the value of the `scalaVersion` setting
+    println("The current Scala version is " + scalaVersion.value)
+    println("The arguments to demo were:")
+    args foreach println
+ }

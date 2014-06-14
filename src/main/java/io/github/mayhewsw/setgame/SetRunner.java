@@ -31,7 +31,7 @@ public class SetRunner {
 	public void run() {
 		System.out.println("\nRunning SetGame");
 
-		VideoCapture v = new VideoCapture(1);
+		VideoCapture v = new VideoCapture();
 		
 		v.open(1);
 		
@@ -39,9 +39,10 @@ public class SetRunner {
 		// boolean b = v.set(4, 160);
 		boolean b = v.set(Highgui.CV_CAP_PROP_FRAME_WIDTH, 1280);
 		boolean b2 = v.set(Highgui.CV_CAP_PROP_FRAME_HEIGHT, 800);
-		System.out.println(b + " " + b2);
+		//boolean b3 = v.set(Highgui.CV_CAP_PROP_SETTINGS, 800);
+		//System.out.println(b + " " + b2 + " " + b3);
 
-		 //System.out.println(v.get(Highgui.CV_CAP_PROP_FRAME_WIDTH)); //to get the actual width of
+		System.out.println(v.get(Highgui.CV_CAP_PROP_FRAME_WIDTH)); //to get the actual width of
 		// the camera
 		 //System.out.println(v.get(Highgui.CV_CAP_PROP_FRAME_HEIGHT));//to get the actual height of
 		// the camera
